@@ -1,3 +1,8 @@
+#![no_std]
+
+#[cfg(feature = "std")]
+extern crate std;
+
 pub mod generic;
 mod william3;
 pub use william3::*;

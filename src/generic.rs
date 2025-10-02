@@ -1,8 +1,11 @@
-pub struct SimpleHasher<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunk, HashInner> {
+pub struct SimpleHasher<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkState, HashInnerState>
+{
     /// The `hash_chunk` spec parameter.
-    hash_chunk: HashChunk,
+    hash_chunk: fn(&[u8], bool, &HashChunkState, &mut [u8; WIDTH]),
     /// The `hash_inner` spec parameter.
-    hash_inner: HashInner,
+    hash_inner: fn(&[u8; WIDTH], &[u8; WIDTH], u64, bool, &HashInnerState, &mut [u8; WIDTH]),
+    hash_chunk_state: HashChunkState,
+    hash_inner_state: HashInnerState,
     /// How many bytes of input have we processed so far?
     len: u64,
     /// Intuitively, this array stores the label of the rightmost vertex of each tree layer which will never change again. More precisely:
@@ -20,17 +23,21 @@ pub struct SimpleHasher<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunk, 
     current_chunk_len: usize,
 }
 
-impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunk, HashInner>
-    SimpleHasher<WIDTH, CHUNK_SIZE, HashChunk, HashInner>
-where
-    HashChunk: Fn(&[u8], bool) -> [u8; WIDTH],
-    HashInner: Fn(&[u8; WIDTH], &[u8; WIDTH], u64, bool) -> [u8; WIDTH],
+impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkState, HashInnerState>
+    SimpleHasher<WIDTH, CHUNK_SIZE, HashChunkState, HashInnerState>
 {
     /// Creates a mew bab hasher, using the given `hash_chunk` and `hash_inner` functions.
-    pub fn new(hash_chunk: HashChunk, hash_inner: HashInner) -> Self {
+    pub fn new(
+        hash_chunk: fn(&[u8], bool, &HashChunkState, &mut [u8; WIDTH]),
+        hash_inner: fn(&[u8; WIDTH], &[u8; WIDTH], u64, bool, &HashInnerState, &mut [u8; WIDTH]),
+        hash_chunk_state: HashChunkState,
+        hash_inner_state: HashInnerState,
+    ) -> Self {
         Self {
             hash_chunk,
             hash_inner,
+            hash_chunk_state,
+            hash_inner_state,
             len: 0,
             right_frontier: [[0; WIDTH]; 64],
             complete_root_label: [0; WIDTH],
@@ -135,10 +142,21 @@ where
 
             if frontier_arr_index == 0 {
                 // If `frontier_arr_index == 0`, we need to compute the label of a leaf. Easy.
-                let label = (self.hash_chunk)(&self.current_chunk, is_root);
+                let mut label = [0; WIDTH];
+                (self.hash_chunk)(
+                    &self.current_chunk,
+                    is_root,
+                    &self.hash_chunk_state,
+                    &mut label,
+                );
+
                 if store_root_label_so_far {
-                    self.complete_root_label =
-                        (self.hash_chunk)(&self.current_chunk, store_root_label_so_far);
+                    (self.hash_chunk)(
+                        &self.current_chunk,
+                        store_root_label_so_far,
+                        &self.hash_chunk_state,
+                        &mut self.complete_root_label,
+                    );
                 }
 
                 self.right_frontier[frontier_arr_index] = label;
@@ -152,18 +170,24 @@ where
                 // the CHUNK_SIZE times the number of its leaves.
                 let tree_len = (CHUNK_SIZE as u64) * (1 << frontier_arr_index);
 
-                let label = (self.hash_inner)(
+                let mut label = [0; WIDTH];
+                (self.hash_inner)(
                     &old_label_of_previous_frontier_arr_index,
                     &self.right_frontier[frontier_arr_index - 1],
                     tree_len,
                     is_root,
+                    &self.hash_inner_state,
+                    &mut label,
                 );
+
                 if store_root_label_so_far {
-                    self.complete_root_label = (self.hash_inner)(
+                    (self.hash_inner)(
                         &old_label_of_previous_frontier_arr_index,
                         &self.right_frontier[frontier_arr_index - 1],
                         tree_len,
                         store_root_label_so_far,
+                        &self.hash_inner_state,
+                        &mut self.complete_root_label,
                     );
                 }
 
@@ -220,20 +244,23 @@ where
 
                 // We store these parent labels in an accumulator `acc`, as we iterate. We further store the value `k` such that `k + 1` is the height of the previously processed subtree, and the total number of bytes summarised in the previously processed subtree.
                 // The initial values for these depend on whether we have a partial chunk or not.
-                let (mut acc, starting_k, mut len) = if self.current_chunk_len > 0 {
+                let mut acc = [0; WIDTH];
+                let (starting_k, mut len) = if self.current_chunk_len > 0 {
                     // We have a partial chunk. Its label becomes the first accumulated value, and its `k` is always zero (because the partial chunk forms a complete subtree of height one).
-                    (
-                        // is_root is always false here; if it was true, then chunk_count would have
-                        // been 1, i.e., a power of two, and we would not be in this branch.
-                        (self.hash_chunk)(&self.current_chunk[..self.current_chunk_len], false),
-                        0,
-                        self.current_chunk_len as u64,
-                    )
+                    // is_root is always false here; if it was true, then chunk_count would have
+                    // been 1, i.e., a power of two, and we would not be in this branch.
+                    (self.hash_chunk)(
+                        &self.current_chunk[..self.current_chunk_len],
+                        false,
+                        &self.hash_chunk_state,
+                        &mut acc,
+                    );
+
+                    (0, self.current_chunk_len as u64)
                 } else {
                     // If we do not have a partial chunk, we need to find the least k such that
                     // the tree contains a complete subtree of height `k + 1`.
                     // Then we initialise the accumulator with the precomputed label for that subtree.
-                    let mut acc = [0; WIDTH];
                     let mut least_relevant_k = 0;
                     for k in 0..64u32 {
                         if is_bit_set(chunk_count, k) {
@@ -244,8 +271,8 @@ where
                             break;
                         }
                     }
+
                     (
-                        acc,
                         least_relevant_k,
                         (CHUNK_SIZE as u64) * (1 << least_relevant_k),
                     )
@@ -265,12 +292,16 @@ where
                         // (which we already know from the previous iteration).
                         len = (CHUNK_SIZE as u64) * (1 << k) + len;
 
-                        acc = (self.hash_inner)(
+                        let mut next_acc = [0; WIDTH];
+                        (self.hash_inner)(
                             &self.right_frontier[k as usize],
                             &acc,
                             len,
                             is_greatest_subtree,
+                            &self.hash_inner_state,
+                            &mut next_acc,
                         );
+                        acc = next_acc;
 
                         if is_greatest_subtree {
                             return acc;
