@@ -146,17 +146,21 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize> SimpleHasher<WIDTH, CHUNK_SIZE
                 // the new label of the previous frontier arr index - which is stimply stored in the `right_frontier` array,
                 // courtesy of the prior invocation of this method.
 
+                // Since we are working with completed chunks only, the length of the tree we are labelling is
+                // the CHUNK_SIZE times the number of its leaves.
+                let tree_len = (CHUNK_SIZE as u64) * (1 << frontier_arr_index);
+
                 let label = (self.hash_inner)(
                     &old_label_of_previous_frontier_arr_index,
                     &self.right_frontier[frontier_arr_index - 1],
-                    self.len,
+                    tree_len,
                     is_root,
                 );
                 if store_root_label_so_far {
                     self.complete_root_label = (self.hash_inner)(
                         &old_label_of_previous_frontier_arr_index,
                         &self.right_frontier[frontier_arr_index - 1],
-                        self.len,
+                        tree_len,
                         store_root_label_so_far,
                     );
                 }
@@ -212,15 +216,16 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize> SimpleHasher<WIDTH, CHUNK_SIZE
                 // order, and successively compute the parent label of the parent nodes joining the rightmost and
                 // second-to-rightmost root respectively.
 
-                // We store these parent labels in an accumulator `acc`, as we iterate. We further store the value `k` such that `k + 1` is the height of the previously processed subtree.
+                // We store these parent labels in an accumulator `acc`, as we iterate. We further store the value `k` such that `k + 1` is the height of the previously processed subtree, and the total number of bytes summarised in the previously processed subtree.
                 // The initial values for these depend on whether we have a partial chunk or not.
-                let (mut acc, starting_k) = if self.current_chunk_len > 0 {
+                let (mut acc, starting_k, mut len) = if self.current_chunk_len > 0 {
                     // We have a partial chunk. Its label becomes the first accumulated value, and its `k` is always zero (because the partial chunk forms a complete subtree of height one).
                     (
                         // is_root is always false here; if it was true, then chunk_count would have
                         // been 1, i.e., a power of two, and we would not be in this branch.
                         (self.hash_chunk)(&self.current_chunk[..self.current_chunk_len], false),
                         0,
+                        self.current_chunk_len as u64,
                     )
                 } else {
                     // If we do not have a partial chunk, we need to find the least k such that
@@ -237,7 +242,11 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize> SimpleHasher<WIDTH, CHUNK_SIZE
                             break;
                         }
                     }
-                    (acc, least_relevant_k)
+                    (
+                        acc,
+                        least_relevant_k,
+                        (CHUNK_SIZE as u64) * (1 << least_relevant_k),
+                    )
                 };
 
                 // Now we can build up the accumulator by repeatedly computing the parent label of
@@ -249,10 +258,15 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize> SimpleHasher<WIDTH, CHUNK_SIZE
                     if is_bit_set(chunk_count, k) {
                         let is_greatest_subtree = chunk_count.ilog2() == k;
 
+                        // The total length of bytes we are summarising in this tree node is the sum of the bytes
+                        // in the left tree (easy to copute ,since it consists of full chunks only) and the right tree
+                        // (which we already know from the previous iteration).
+                        len = (CHUNK_SIZE as u64) * (1 << k) + len;
+
                         acc = (self.hash_inner)(
                             &self.right_frontier[k as usize],
                             &acc,
-                            self.len,
+                            len,
                             is_greatest_subtree,
                         );
 
