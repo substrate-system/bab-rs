@@ -44,18 +44,92 @@ fn hash_inner(
     todo!()
 }
 
-// The input chaining value, h0 ... h7 (256 bits).
-// • The message block, m0 ... m15 (512 bits).
-// • A 64-bit counter, t = t0, t1, with t0 the lower order word and t1 the higher order word.
-// • The number of input bytes in the block, b (32 bits).
-// • A set of domain separation bit flags, d (32 bits)
+// These are different for WILLIAM3 than for BLAKE3.
+static IV: [u32; 8] = [
+    0xc88f633b, 0x4168fbf2, 0x6ba32583, 0xb0ff1847, 0xac57e47d, 0xa8931330, 0x796a4645, 0x6b28a3ee,
+];
 
 fn compression_function(
-    input_chaining_value: [u32; 8],
-    message_block: [u32; 16],
-    counter: [u32; 2],
-    input_len_in_bytes: u32,
-    domain_separation_flags: u32,
+    h: [u32; 8],  // input chaining value
+    m: [u32; 16], // message blocks
+    // Careful: works differently in WILLIAM3 than in BLAKE3.
+    // Also careful: little-endian!
+    t: [u32; 2], // counter (leaf size sum)
+    b: u32,      // number of input bytes in the block
+    d: u32,      // domain-separation flags
 ) -> [u8; WIDTH] {
+    // Initial internal state.
+    let mut v: [u32; 16] = [
+        h[0], h[1], h[2], h[3], //
+        h[4], h[5], h[6], h[7], //
+        IV[0], IV[1], IV[2], IV[3], //
+        t[0], t[1], b, d,
+    ];
+
+    // Do a silly dance to keep rust happy. We cannot directly pass mutable references to multiple
+    // state words into the `G` function, unless we use `split_at_mut` (or do unsafe stuff).
+    let rest = &mut v[..];
+    let (v0, rest) = rest.split_at_mut(1);
+    let (v1, rest) = rest.split_at_mut(1);
+    let (v2, rest) = rest.split_at_mut(1);
+    let (v3, rest) = rest.split_at_mut(1);
+    let (v4, rest) = rest.split_at_mut(1);
+    let (v5, rest) = rest.split_at_mut(1);
+    let (v6, rest) = rest.split_at_mut(1);
+    let (v7, rest) = rest.split_at_mut(1);
+    let (v8, rest) = rest.split_at_mut(1);
+    let (v9, rest) = rest.split_at_mut(1);
+    let (v10, rest) = rest.split_at_mut(1);
+    let (v11, rest) = rest.split_at_mut(1);
+    let (v12, rest) = rest.split_at_mut(1);
+    let (v13, rest) = rest.split_at_mut(1);
+    let (v14, rest) = rest.split_at_mut(1);
+    let (v15, _rest) = rest.split_at_mut(1);
+
+    let v0 = v0.get_mut(0).unwrap();
+    let v1 = v1.get_mut(0).unwrap();
+    let v2 = v2.get_mut(0).unwrap();
+    let v3 = v3.get_mut(0).unwrap();
+    let v4 = v4.get_mut(0).unwrap();
+    let v5 = v5.get_mut(0).unwrap();
+    let v6 = v6.get_mut(0).unwrap();
+    let v7 = v7.get_mut(0).unwrap();
+    let v8 = v8.get_mut(0).unwrap();
+    let v9 = v9.get_mut(0).unwrap();
+    let v10 = v10.get_mut(0).unwrap();
+    let v11 = v11.get_mut(0).unwrap();
+    let v12 = v12.get_mut(0).unwrap();
+    let v13 = v13.get_mut(0).unwrap();
+    let v14 = v14.get_mut(0).unwrap();
+    let v15 = v15.get_mut(0).unwrap();
+
+    // Run seven rounds of keyed permutations.
+    for i in 0..7 {
+        // First apply `G` to each column.
+        G(v0, v4, v8, v12, m[0], m[1]);
+        G(v1, v5, v9, v13, m[2], m[3]);
+        G(v2, v6, v10, v14, m[4], m[5]);
+        G(v3, v7, v11, v15, m[6], m[7]);
+
+        // Then apply `G` to each diagonal.
+        G(v0, v5, v10, v15, m[8], m[9]);
+        G(v1, v6, v11, v12, m[10], m[11]);
+        G(v2, v7, v8, v13, m[12], m[13]);
+        G(v3, v4, v9, v14, m[14], m[15]);
+
+        // After each but the final round, permute the message words.
+        if i != 6 {
+            let tmp_m = m;
+            m[0] = tmp_m[2];
+            todo!()
+        }
+    }
+
+    // Return the proper output.
+    todo!()
+}
+
+#[allow(non_snake_case)]
+fn G(a: &mut u32, b: &mut u32, c: &mut u32, d: &mut u32, m_2i_plus_0: u32, m_2i_plus_1: u32) {
     todo!()
 }
