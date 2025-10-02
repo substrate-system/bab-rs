@@ -1,8 +1,8 @@
-pub struct SimpleHasher<const WIDTH: usize, const CHUNK_SIZE: usize> {
+pub struct SimpleHasher<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunk, HashInner> {
     /// The `hash_chunk` spec parameter.
-    hash_chunk: fn(&[u8], bool) -> [u8; WIDTH],
+    hash_chunk: HashChunk,
     /// The `hash_inner` spec parameter.
-    hash_inner: fn(&[u8; WIDTH], &[u8; WIDTH], u64, bool) -> [u8; WIDTH],
+    hash_inner: HashInner,
     /// How many bytes of input have we processed so far?
     len: u64,
     /// Intuitively, this array stores the label of the rightmost vertex of each tree layer which will never change again. More precisely:
@@ -20,12 +20,14 @@ pub struct SimpleHasher<const WIDTH: usize, const CHUNK_SIZE: usize> {
     current_chunk_len: usize,
 }
 
-impl<const WIDTH: usize, const CHUNK_SIZE: usize> SimpleHasher<WIDTH, CHUNK_SIZE> {
+impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunk, HashInner>
+    SimpleHasher<WIDTH, CHUNK_SIZE, HashChunk, HashInner>
+where
+    HashChunk: Fn(&[u8], bool) -> [u8; WIDTH],
+    HashInner: Fn(&[u8; WIDTH], &[u8; WIDTH], u64, bool) -> [u8; WIDTH],
+{
     /// Creates a mew bab hasher, using the given `hash_chunk` and `hash_inner` functions.
-    pub fn new(
-        hash_chunk: fn(&[u8], bool) -> [u8; WIDTH],
-        hash_inner: fn(&[u8; WIDTH], &[u8; WIDTH], u64, bool) -> [u8; WIDTH],
-    ) -> Self {
+    pub fn new(hash_chunk: HashChunk, hash_inner: HashInner) -> Self {
         Self {
             hash_chunk,
             hash_inner,

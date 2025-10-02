@@ -1,4 +1,6 @@
 pub mod generic;
+mod william3;
+pub use william3::*;
 
 // #[cfg(test)]
 // mod tests {
