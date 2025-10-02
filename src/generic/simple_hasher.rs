@@ -228,6 +228,16 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
         if self.len == 0 {
             // The hash of the empty string is hard-defined to be all-zero-bytes.
             return [0; WIDTH];
+        } else if self.len <= (CHUNK_SIZE as u64) {
+            // We only have a single chunk. Simply call `hash_chunk` with `is_root = true` and call it a day.
+            let mut digest = [0; WIDTH];
+            (self.hash_chunk)(
+                &self.current_chunk[..self.current_chunk_len],
+                true,
+                &self.hash_chunk_state,
+                &mut digest,
+            );
+            return digest;
         } else {
             // Okay, real work ahead. We have a root label of a Merkle tree to compute!
 

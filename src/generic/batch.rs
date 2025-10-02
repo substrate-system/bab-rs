@@ -1,5 +1,7 @@
 //! Hashing complete bytestrings in one go. The least flexible (but easiest to implement) form of Bab hashing.
 
+use std::println;
+
 /// Hashes a bytestring, all at once.
 pub fn batch_hash<
     const WIDTH: usize,

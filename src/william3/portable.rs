@@ -1,6 +1,9 @@
 //! Provides a portable implementation of the compression function of WILLIAM3.
 //! Code adapted from https://github.com/BLAKE3-team/BLAKE3/blob/master/src/portable.rs
 
+use core::cmp::min;
+use std::println;
+
 use crate::william3::basics::{
     BLOCK_LEN, CVBytes, CVWords, IV, MSG_SCHEDULE, counter_high, counter_low,
 };
@@ -109,7 +112,8 @@ pub fn hash1(
     let mut cv = *key;
     let mut block_flags = flags | flags_start;
     let mut slice = &input[..];
-    while slice.len() >= BLOCK_LEN {
+
+    while slice.len() > 0 {
         if slice.len() <= BLOCK_LEN {
             block_flags |= flags_end;
         }
@@ -132,8 +136,9 @@ pub fn hash1(
         }
 
         block_flags = flags;
-        slice = &slice[BLOCK_LEN..];
+        slice = &slice[min(slice.len(), BLOCK_LEN)..];
     }
+
     *out = le_bytes_from_words_32(&cv);
 }
 
