@@ -1,5 +1,4 @@
 use core::cmp::min;
-use std::println;
 
 use super::{HashChunk, HashInner};
 
@@ -263,11 +262,6 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
                     (label, exponent + 1, len)
                 };
 
-                println!(
-                    "simple starting k {:?}, len {:?}, initial acc {:?}, chunk_count {chunk_count}",
-                    exponent, len, acc
-                );
-
                 // Now we can build up the accumulator by repeatedly computing the parent label of
                 // the next complete subtree and the previous accumulator.
                 // When we reached the final subtree, we need to set `is_root` to true in the label computation.
@@ -284,14 +278,6 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
                         // in the left tree (easy to compute, since it consists of full chunks only) and the right tree
                         // (which we already know from the previous iteration).
                         len = (CHUNK_SIZE as u64) * (1 << (exponent)) + len;
-
-                        println!(
-                            "simple loop exponent {exponent} is_greatest_subtree {is_greatest_subtree} len {len}"
-                        );
-                        println!(
-                            "simple loop precomputed right_frontier[k] {:?}",
-                            self.right_frontier[(exponent) as usize]
-                        );
 
                         let mut next_acc = [0; WIDTH];
                         (self.hash_inner)(

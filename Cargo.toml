@@ -5,12 +5,12 @@ edition = "2024"
 
 [features]
 
-default = ["std"]
+default = ["william3"]
 
-# Provide functionality that relies on the std library. Enabled by default.
-std = []
+# Provide an implementation of the WILLIAM3 parameterisation of Bab. Enabled by default.
+william3 = ["dep:arrayref", "dep:arrayvec", "dep:constant_time_eq"]
 
 [dependencies]
-arrayref = "0.3.5"
-arrayvec = { version = "0.7.4", default-features = false }
-constant_time_eq = { version = "0.3.1", default-features = false }
+arrayref = { version = "0.3.5", optional = true }
+arrayvec = { version = "0.7.4", default-features = false, optional = true }
+constant_time_eq = { version = "0.3.1", default-features = false, optional = true }

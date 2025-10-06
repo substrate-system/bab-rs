@@ -2,7 +2,6 @@
 //! Code adapted from https://github.com/BLAKE3-team/BLAKE3/blob/master/src/portable.rs
 
 use core::cmp::min;
-use std::println;
 
 use crate::william3::basics::{
     BLOCK_LEN, CVBytes, CVWords, IV, MSG_SCHEDULE, counter_high, counter_low,

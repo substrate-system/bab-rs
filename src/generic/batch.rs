@@ -1,7 +1,5 @@
 //! Hashing complete bytestrings in one go. The least flexible (but easiest to implement) form of Bab hashing.
 
-use std::println;
-
 /// Hashes a bytestring, all at once.
 pub fn batch_hash<
     const WIDTH: usize,
@@ -42,8 +40,6 @@ fn do_batch_hash<
     out: &mut [u8; WIDTH],
     is_root: bool,
 ) {
-    println!("do_batch_hash with length {:?}", bytes.len());
-
     if bytes.len() <= CHUNK_SIZE {
         // If the input fits in a single chunk, the digest is obtained by calling `hash_chunk`.
         hash_chunk(bytes, is_root, hash_chunk_context, out);
@@ -83,16 +79,6 @@ fn do_batch_hash<
             &bytes[left_len..],
             &mut right_child_label,
             false,
-        );
-
-        println!(
-            "do_batch_hash left {:?} (len {:?})",
-            left_child_label, left_len
-        );
-        println!(
-            "do_batch_hash right {:?} (len {:?})",
-            right_child_label,
-            bytes.len() - left_len
         );
 
         // We have computed the labels of the two children, now we can compute the root label and are done.
