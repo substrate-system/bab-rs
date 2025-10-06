@@ -42,10 +42,7 @@ fn do_batch_hash<
     out: &mut [u8; WIDTH],
     is_root: bool,
 ) {
-    if bytes.len() == 0 {
-        // If the input is empty, the digest is all zeros.
-        out.copy_from_slice(&[0; WIDTH]);
-    } else if bytes.len() <= CHUNK_SIZE {
+    if bytes.len() <= CHUNK_SIZE {
         // If the input fits in a single chunk, the digest is obtained by calling `hash_chunk`.
         hash_chunk(bytes, is_root, hash_chunk_context, out);
     } else {

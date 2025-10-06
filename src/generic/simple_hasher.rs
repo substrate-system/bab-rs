@@ -224,11 +224,7 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
         // So. Here we need to combine the information in `self.right_frontier` with the data
         // of the chunk we are currently processing, in order to obtain a proper digest.
 
-        // But first, a simple special case.
-        if self.len == 0 {
-            // The hash of the empty string is hard-defined to be all-zero-bytes.
-            return [0; WIDTH];
-        } else if self.len <= (CHUNK_SIZE as u64) {
+        if self.len <= (CHUNK_SIZE as u64) {
             // We only have a single chunk. Simply call `hash_chunk` with `is_root = true` and call it a day.
             let mut digest = [0; WIDTH];
             (self.hash_chunk)(

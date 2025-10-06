@@ -5,7 +5,7 @@ use bab::{SimpleHasher, WIDTH, batch_hash, batch_hash_keyed};
 
 fuzz_target!(|data: (Vec<u8>, Option<[u32; 8]>, Vec<usize>)| {
     let (input_bytes, key, mut write_sizes) = data;
-    if write_sizes.iter().map(|size| *size).sum::<usize>() == 0 {
+    if !write_sizes.iter().any(|size| *size > 0) {
         write_sizes.push(173);
     }
 
