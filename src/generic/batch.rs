@@ -42,6 +42,8 @@ fn do_batch_hash<
     out: &mut [u8; WIDTH],
     is_root: bool,
 ) {
+    println!("do_batch_hash with length {:?}", bytes.len());
+
     if bytes.len() <= CHUNK_SIZE {
         // If the input fits in a single chunk, the digest is obtained by calling `hash_chunk`.
         hash_chunk(bytes, is_root, hash_chunk_context, out);
@@ -82,6 +84,9 @@ fn do_batch_hash<
             &mut right_child_label,
             false,
         );
+
+        println!("do_batch_hash left {:?}", left_child_label);
+        println!("do_batch_hash right {:?}", right_child_label);
 
         // We have computed the labels of the two children, now we can compute the root label and are done.
         hash_inner(

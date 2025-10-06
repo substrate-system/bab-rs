@@ -278,18 +278,23 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
                     (0, self.current_chunk_len as u64)
                 } else {
                     // If we do not have a partial chunk, we need to find the least k such that
-                    // the tree contains a complete subtree of height `k + 1`.
+                    // the tree contains a complete subtree of height `k + 1`. This happens to equal
+                    // The number of trailing zeroes in the binary representation of the number of leaves.
+                    let mut least_relevant_k = chunk_count.trailing_zeros();
                     // Then we initialise the accumulator with the precomputed label for that subtree.
-                    let mut least_relevant_k = 0;
-                    for k in 0..64u32 {
-                        if is_bit_set(chunk_count, k) {
-                            // We found the starting point. Note that if this was the *only* one bit, chunk_count
-                            // would be a power of two, and we would not be in this branch in the first place.
-                            acc = self.right_frontier[k as usize];
-                            least_relevant_k = k;
-                            break;
-                        }
-                    }
+                    // Note that there must be at least one other one bit, since otherwise chunk_count
+                    // would be a power of two, and we would not be in this branch in the first place.
+                    acc = self.right_frontier[least_relevant_k as usize];
+
+                    // for k in 0..64u32 {
+                    //     if is_bit_set(chunk_count, k) {
+                    //         // We found the starting point. Note that if this was the *only* one bit, chunk_count
+                    //         // would be a power of two, and we would not be in this branch in the first place.
+                    //         acc = self.right_frontier[k as usize];
+                    //         least_relevant_k = k;
+                    //         break;
+                    //     }
+                    // }
 
                     (
                         least_relevant_k,
@@ -297,13 +302,18 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
                     )
                 };
 
+                println!(
+                    "simple starting k {:?}, len {:?}, initial acc {:?}",
+                    starting_k, len, acc
+                );
+
                 // Now we can build up the accumulator by repeatedly computing the parent label of
                 // the next complete subtree and the previous accumulator.
                 // When we reached the final subtree, we need to set `is_root` to true in the label computation.
                 // To check for that, we use that the floored base-two logarithm of `chunk_size` is equal to
                 // the height of its greatest complete subtree.
                 for k in starting_k..64 {
-                    if is_bit_set(chunk_count, k) {
+                    if is_bit_set(chunk_count, k as u32) {
                         let is_greatest_subtree = chunk_count.ilog2() == k;
 
                         // The total length of bytes we are summarising in this tree node is the sum of the bytes

@@ -9,6 +9,8 @@ fuzz_target!(|data: (Vec<u8>, Option<[u32; 8]>, Vec<usize>)| {
         write_sizes.push(173);
     }
 
+    println!("test input length: {:?}", input_bytes.len());
+
     let mut digest_batch = [0; WIDTH];
 
     match key {
