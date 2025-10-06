@@ -85,8 +85,15 @@ fn do_batch_hash<
             false,
         );
 
-        println!("do_batch_hash left {:?}", left_child_label);
-        println!("do_batch_hash right {:?}", right_child_label);
+        println!(
+            "do_batch_hash left {:?} (len {:?})",
+            left_child_label, left_len
+        );
+        println!(
+            "do_batch_hash right {:?} (len {:?})",
+            right_child_label,
+            bytes.len() - left_len
+        );
 
         // We have computed the labels of the two children, now we can compute the root label and are done.
         hash_inner(

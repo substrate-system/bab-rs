@@ -1,6 +1,8 @@
 use core::cmp::min;
 use std::println;
 
+use crate::CHUNK_SIZE;
+
 use super::{HashChunk, HashInner};
 
 pub struct SimpleHasher<
@@ -75,20 +77,22 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
 
         self.len += bytes.len() as u64;
 
-        if self.current_chunk_len + bytes.len() < CHUNK_SIZE {
-            // The data does not complete the chunk, we can simply append it to the current chunk.
-            let start = self.current_chunk_len;
-            let end = start + bytes.len();
-            self.current_chunk[start..end].copy_from_slice(bytes);
-            self.current_chunk_len += bytes.len();
-        } else {
+        let start = self.current_chunk_len;
+        let end = start + bytes.len();
+        self.current_chunk[start..end].copy_from_slice(bytes);
+        self.current_chunk_len += bytes.len();
+
+        if self.current_chunk_len == CHUNK_SIZE {
             // Oh no, a chunk was completed, real work ahead.
+            debug_assert!(
+                self.number_of_completed_chunks() > 0,
+                "self.len {:?}, self.current_chunk_len {:?}, bytes.len {:?}",
+                self.len,
+                self.current_chunk_len,
+                bytes.len()
+            );
 
-            self.current_chunk_len = 0;
-
-            // Okay, that part was easy.
-
-            // The fun part is updating the `right_frontier`.
+            // First, we update the `right_frontier`.
             // We always update its index zero, because the chunk we just processed is now the rightmost complete subtree of height one.
             // Then, we check whether we also just completed a subtree of height two. If no, then we are done. If we did, then we update
             // index one, and check whether we also just completed a subtree of height three. And so on, until we reached a height for
@@ -102,6 +106,9 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
                     Some(replaced) => old_label = replaced,
                 }
             }
+
+            // Finally, reset the chunk len.
+            self.current_chunk_len = 0;
         }
     }
 
@@ -136,6 +143,10 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
 
         let should_do_stuff = (chunk_index.trailing_ones() as usize) >= frontier_arr_index;
 
+        println!(
+            "update_individual_frontier_index arr_index {frontier_arr_index} {should_do_stuff} chunk_index {chunk_index}"
+        );
+
         // If we did not complete a subtree, we simply signal so, and do not need to update anything.
         if !should_do_stuff {
             return None;
@@ -149,15 +160,16 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
             // take care of recomputing labels with `is_root = true` when necessary.
             let is_root = false;
 
-            // But, for the roots of coplete trees that cover *all* chunks we had so far, we do store the
+            // But, for the roots of complete trees that cover *all* chunks we had so far, we do store the
             // label computed with is_root = true specifically.
             let store_root_label_so_far = (chunk_index + 1).is_power_of_two();
 
             if frontier_arr_index == 0 {
                 // If `frontier_arr_index == 0`, we need to compute the label of a leaf. Easy.
+                println!("{:?}", self.current_chunk_len);
                 let mut label = [0; WIDTH];
                 (self.hash_chunk)(
-                    &self.current_chunk,
+                    &self.current_chunk[..self.current_chunk_len],
                     is_root,
                     &self.hash_chunk_state,
                     &mut label,
@@ -165,14 +177,23 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
 
                 if store_root_label_so_far {
                     (self.hash_chunk)(
-                        &self.current_chunk,
+                        &self.current_chunk[..self.current_chunk_len],
                         store_root_label_so_far,
                         &self.hash_chunk_state,
                         &mut self.complete_root_label,
                     );
+
+                    println!(
+                        "stored root label {:?} for frontier_arr_index {:?}",
+                        self.complete_root_label, frontier_arr_index
+                    );
                 }
 
                 self.right_frontier[frontier_arr_index] = label;
+                println!(
+                    "stored {:?} at frontier_arr_index {:?}",
+                    label, frontier_arr_index
+                );
             } else {
                 // Else, we need to compute an inner label.
                 // We can compute it from the `old_label_of_previous_frontier_arr_index` and
@@ -228,11 +249,12 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
             // We only have a single chunk. Simply call `hash_chunk` with `is_root = true` and call it a day.
             let mut digest = [0; WIDTH];
             (self.hash_chunk)(
-                &self.current_chunk[..self.current_chunk_len],
+                &self.current_chunk[..self.len as usize],
                 true,
                 &self.hash_chunk_state,
                 &mut digest,
             );
+            println!("single chunk self.len {:?}", self.len);
             return digest;
         } else {
             // Okay, real work ahead. We have a root label of a Merkle tree to compute!
@@ -261,7 +283,7 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
                 // order, and successively compute the parent label of the parent nodes joining the rightmost and
                 // second-to-rightmost root respectively.
 
-                // We store these parent labels in an accumulator `acc`, as we iterate. We further store the value `k` such that `k + 1` is the height of the previously processed subtree, and the total number of bytes summarised in the previously processed subtree.
+                // We store these parent labels in an accumulator `acc`, as we iterate. We further store the value `k` such that `k` is the height of the previously processed subtree, and the total number of bytes summarised in the previously processed subtree.
                 // The initial values for these depend on whether we have a partial chunk or not.
                 let mut acc = [0; WIDTH];
                 let (starting_k, mut len) = if self.current_chunk_len > 0 {
@@ -275,26 +297,16 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
                         &mut acc,
                     );
 
-                    (0, self.current_chunk_len as u64)
+                    (1, self.current_chunk_len as u64)
                 } else {
                     // If we do not have a partial chunk, we need to find the least k such that
-                    // the tree contains a complete subtree of height `k + 1`. This happens to equal
+                    // the tree contains a complete subtree of height `k`. This happens to equal
                     // The number of trailing zeroes in the binary representation of the number of leaves.
-                    let mut least_relevant_k = chunk_count.trailing_zeros();
+                    let least_relevant_k = chunk_count.trailing_zeros();
                     // Then we initialise the accumulator with the precomputed label for that subtree.
                     // Note that there must be at least one other one bit, since otherwise chunk_count
                     // would be a power of two, and we would not be in this branch in the first place.
                     acc = self.right_frontier[least_relevant_k as usize];
-
-                    // for k in 0..64u32 {
-                    //     if is_bit_set(chunk_count, k) {
-                    //         // We found the starting point. Note that if this was the *only* one bit, chunk_count
-                    //         // would be a power of two, and we would not be in this branch in the first place.
-                    //         acc = self.right_frontier[k as usize];
-                    //         least_relevant_k = k;
-                    //         break;
-                    //     }
-                    // }
 
                     (
                         least_relevant_k,
@@ -303,7 +315,7 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
                 };
 
                 println!(
-                    "simple starting k {:?}, len {:?}, initial acc {:?}",
+                    "simple starting k {:?}, len {:?}, initial acc {:?}, chunk_count {chunk_count}",
                     starting_k, len, acc
                 );
 
@@ -313,17 +325,25 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
                 // To check for that, we use that the floored base-two logarithm of `chunk_size` is equal to
                 // the height of its greatest complete subtree.
                 for k in starting_k..64 {
-                    if is_bit_set(chunk_count, k as u32) {
+                    if is_bit_set(chunk_count, k - 1 as u32) {
                         let is_greatest_subtree = chunk_count.ilog2() == k;
 
                         // The total length of bytes we are summarising in this tree node is the sum of the bytes
-                        // in the left tree (easy to copute ,since it consists of full chunks only) and the right tree
+                        // in the left tree (easy to compute, since it consists of full chunks only) and the right tree
                         // (which we already know from the previous iteration).
-                        len = (CHUNK_SIZE as u64) * (1 << k) + len;
+                        len = (CHUNK_SIZE as u64) * ((1 << k) - 1) + len;
+
+                        println!(
+                            "simple loop k {k} is_greatest_subtree {is_greatest_subtree} len {len}"
+                        );
+                        println!(
+                            "simple loop precomputed right_frontier[k - 1] {:?}",
+                            self.right_frontier[(k - 1) as usize]
+                        );
 
                         let mut next_acc = [0; WIDTH];
                         (self.hash_inner)(
-                            &self.right_frontier[k as usize],
+                            &self.right_frontier[(k - 1) as usize],
                             &acc,
                             len,
                             is_greatest_subtree,
