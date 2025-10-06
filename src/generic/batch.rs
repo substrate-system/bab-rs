@@ -1,6 +1,8 @@
 //! Hashing complete bytestrings in one go. The least flexible (but easiest to implement) form of Bab hashing.
 
-/// Hashes a bytestring, all at once.
+/// Computes a Bab digest of the given input bytes, and writes it into `out`.
+///
+/// This is the simplemost hashing API; it requires the full string to be available at once. See the [`SimpleHasher`](super::SimpleHasher) API for incremental hashing.
 pub fn batch_hash<
     const WIDTH: usize,
     const CHUNK_SIZE: usize,

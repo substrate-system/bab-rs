@@ -1,3 +1,5 @@
+//! A generic implementation of the [Bab](https://worm-blossom.github.io/bab/) family of hash functions.
+
 /// An instantiation of the `hash_chunk` spec parameter, with immutable access to a value of type `HashChunkContext`.
 /// The computed tree node label must be written into the final argument.
 pub type HashChunk<const WIDTH: usize, HashChunkContext> =

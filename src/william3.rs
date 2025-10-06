@@ -12,10 +12,11 @@ use crate::william3::{
     portable::hash1,
 };
 
+/// The number of bytes in a WILLIAM3 digest.
 pub const WIDTH: usize = 32;
-pub const CHUNK_SIZE: usize = 1024;
+pub(crate) const CHUNK_SIZE: usize = 1024;
 
-pub struct HashChunkContext {
+pub(crate) struct HashChunkContext {
     key: Option<[u32; 8]>,
 }
 
@@ -29,7 +30,12 @@ impl HashChunkContext {
     }
 }
 
-pub fn hash_chunk(chunk: &[u8], is_root: bool, state: &HashChunkContext, output: &mut [u8; WIDTH]) {
+pub(crate) fn hash_chunk(
+    chunk: &[u8],
+    is_root: bool,
+    state: &HashChunkContext,
+    output: &mut [u8; WIDTH],
+) {
     let mut flags = 0;
     if state.key.is_some() {
         flags |= KEYED_HASH
@@ -53,7 +59,7 @@ pub fn hash_chunk(chunk: &[u8], is_root: bool, state: &HashChunkContext, output:
     );
 }
 
-pub struct HashInnerContext {
+pub(crate) struct HashInnerContext {
     key: Option<[u32; 8]>,
 }
 
@@ -67,7 +73,7 @@ impl HashInnerContext {
     }
 }
 
-pub fn hash_inner(
+pub(crate) fn hash_inner(
     left_label: &[u8; WIDTH],
     right_label: &[u8; WIDTH],
     length_of_subtree: u64,

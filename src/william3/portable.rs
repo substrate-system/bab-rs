@@ -1,5 +1,5 @@
-//! Provides a portable implementation of the compression function of WILLIAM3.
-//! Code adapted from https://github.com/BLAKE3-team/BLAKE3/blob/master/src/portable.rs
+// Provides a portable implementation of the compression function of WILLIAM3.
+// Code adapted from https://github.com/BLAKE3-team/BLAKE3/blob/master/src/portable.rs
 
 use core::cmp::min;
 

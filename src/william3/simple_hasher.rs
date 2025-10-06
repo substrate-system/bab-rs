@@ -3,6 +3,33 @@ use crate::{
     hash_chunk, hash_inner,
 };
 
+/// A stateful hasher for incrementally computing WILLIAM3 digests.
+///
+/// ```
+/// # #[cfg(feature = "bab")] {
+/// use bab::SimpleHasher;
+/// let mut hasher = SimpleHasher::new();
+/// hasher.write(&[0, 1, 2]);
+/// hasher.write(&[3, 4]);
+/// let digest1 = hasher.finish();
+///
+/// let mut batch_digest1 = [0; WIDTH];
+/// batch_hash(&[0, 1, 2, 3, 4], &mut batch_digest1);
+///
+/// assert_eq!(digest1, batch_digest1);
+///
+/// // You can continue using the hasher after calling `finish`.
+/// hasher.write(&[5, 6]);
+///
+/// let mut batch_digest2 = [0; WIDTH];
+/// batch_hash(&[0, 1, 2, 3, 4, 5, 6], &mut batch_digest2);
+///
+/// assert_eq!(
+///     hasher.finish(),
+///     batch_digest2,
+/// );
+/// # }
+/// ```
 pub struct SimpleHasher {
     simple_hasher: GenericHasher<WIDTH, CHUNK_SIZE, HashChunkContext, HashInnerContext>,
 }

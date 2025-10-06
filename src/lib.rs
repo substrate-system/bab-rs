@@ -1,7 +1,26 @@
 #![no_std]
 
-// #[cfg(feature = "std")]
-// extern crate std;
+//! An implementation of the [Bab](https://worm-blossom.github.io/bab/) family of hash functions.
+//!
+//! The crate root exposes the [WILLIAM3](https://worm-blossom.github.io/bab/#instantiations_william) instantiation of Bab, which is a concrete hash function you can use immediately. The [`generic`] module provides parmaterisable implementations of Bab, which you can use to define your own hash functions.
+//!
+//! ```
+//! # #[cfg(feature = "bab")] {
+//! use bab::{batch_hash, SimpleHasher, WIDTH};
+//! let mut hasher = SimpleHasher::new();
+//! hasher.write(&[0, 1, 2]);
+//! hasher.write(&[3, 4]);
+//! let incrementally_computed_hash = hasher.finish();
+//!
+//! let mut batch_digest = [0; WIDTH];
+//! batch_hash(&[0, 1, 2, 3, 4], &mut batch_digest);
+//!
+//! assert_eq!(
+//!     hasher.finish(),
+//!     batch_digest,
+//! );
+//! # }
+//! ```
 
 pub mod generic;
 

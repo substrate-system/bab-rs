@@ -7,7 +7,7 @@
 /// You don't usually need to think about this number. One case where it matters is calling
 /// [`OutputReader::fill`] in a loop, where using a `buf` argument that's a multiple of `BLOCK_LEN`
 /// avoids repeating work.
-pub const BLOCK_LEN: usize = 64;
+pub(crate) const BLOCK_LEN: usize = 64;
 
 // While iterating the compression function within a chunk, the CV is
 // represented as words, to avoid doing two extra endianness conversions for

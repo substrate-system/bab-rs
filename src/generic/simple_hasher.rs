@@ -2,6 +2,7 @@ use core::cmp::min;
 
 use super::{HashChunk, HashInner};
 
+/// A stateful hasher for incrementally computing Bab digests.
 pub struct SimpleHasher<
     const WIDTH: usize,
     const CHUNK_SIZE: usize,
@@ -34,7 +35,7 @@ pub struct SimpleHasher<
 impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerContext>
     SimpleHasher<WIDTH, CHUNK_SIZE, HashChunkContext, HashInnerContext>
 {
-    /// Creates a mew bab hasher, using the given `hash_chunk` and `hash_inner` functions.
+    /// Creates a new bab hasher, using the given `hash_chunk` and `hash_inner` functions.
     pub fn new(
         hash_chunk: fn(&[u8], bool, &HashChunkContext, &mut [u8; WIDTH]),
         hash_inner: fn(&[u8; WIDTH], &[u8; WIDTH], u64, bool, &HashInnerContext, &mut [u8; WIDTH]),

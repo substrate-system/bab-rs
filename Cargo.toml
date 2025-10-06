@@ -12,3 +12,8 @@ william3 = ["dep:arrayref"]
 
 [dependencies]
 arrayref = { version = "0.3.5", optional = true }
+
+# docs.rs-specific configuration
+[package.metadata.docs.rs]
+# document all features
+all-features = true
