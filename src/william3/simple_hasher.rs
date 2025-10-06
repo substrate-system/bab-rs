@@ -44,3 +44,19 @@ impl SimpleHasher {
         self.simple_hasher.finish()
     }
 }
+
+#[test]
+fn test_simple_hasher() {
+    let data = [17u8; CHUNK_SIZE * 16];
+
+    for len in 0..data.len() {
+        let mut digest_batch = [0; WIDTH];
+        crate::batch_hash(&data[..len], &mut digest_batch);
+
+        let mut hasher = SimpleHasher::new();
+        hasher.write(&data[..len]);
+        let digest_hasher = hasher.finish();
+
+        assert_eq!(digest_hasher, digest_batch);
+    }
+}

@@ -1,8 +1,6 @@
 use core::cmp::min;
 use std::println;
 
-use crate::{CHUNK_SIZE, WIDTH};
-
 use super::{HashChunk, HashInner};
 
 pub struct SimpleHasher<
@@ -105,7 +103,7 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
 
             let mut left_label = [0; WIDTH];
             for exponent in 0..num_completed_subtrees {
-                self.update_individual_frontier_index(exponent, &mut left_label);
+                self.update_frontier_for_exponent(exponent, &mut left_label);
             }
 
             // Finally, reset the chunk len.
@@ -116,7 +114,7 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
     /// Updates `self.right_frontier[exponent]` with the label of the complete subtree over the `2^exponent` most recent chunks, with is_root = false. For `exponent == 0`, this is a simple chunk label computation. Otherwise, the inner label is computed from two child labels. The right child label can be simply looked up as `self.right_frontier[exponent - 1]`. The left label is passed to this function via the `left_label` argument. It replaces the contents of `left_label` with the value at `self.right_frontier[exponent]` (before overwriting it). This allows us to pass it as the next right label to the next call of this function with `exponent + 1` (*if* we make such a call at all).
     ///
     /// For `exponent == 0`, the `left_label` argument will be ignored.
-    fn update_individual_frontier_index(&mut self, exponent: usize, left_label: &mut [u8; WIDTH]) {
+    fn update_frontier_for_exponent(&mut self, exponent: usize, left_label: &mut [u8; WIDTH]) {
         // First, cache the old value at `self.right_frontier[exponent]`, because we need to write that to `left_label` before returning.
         let next_left_label = self.right_frontier[exponent];
 
@@ -192,7 +190,7 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
         // of the chunk we are currently processing, in order to obtain a proper digest.
 
         if self.len <= (CHUNK_SIZE as u64) {
-            // We only have a single chunk. Simply call `hash_chunk` with `is_root = true` and call it a day.
+            // We only have a single chunk. Simply call `hash_chunk` with `is_root = true` and call it a day. The frontier does not factor into things at all.
             let mut digest = [0; WIDTH];
             (self.hash_chunk)(
                 &self.current_chunk[..self.len as usize],
@@ -200,15 +198,15 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
                 &self.hash_chunk_state,
                 &mut digest,
             );
-            println!("single chunk self.len {:?}", self.len);
             return digest;
         } else {
-            // Okay, real work ahead. We have a root label of a Merkle tree to compute!
+            // Okay, real work ahead. We have a root label of a non-trivial Merkle tree to compute!
 
             // We need to know how many leaves the tree will have.
             // If `self.current_chunk_len == 0`, then we have no partial chunk, else, we have an extra chunk beyond the already-completed ones.
             let chunk_count =
                 self.number_of_completed_chunks() + if self.current_chunk_len == 0 { 0 } else { 1 };
+            let completed_chunk_count = self.number_of_completed_chunks();
 
             if self.current_chunk_len == 0 && chunk_count.is_power_of_two() {
                 // In the special case that the number of chunks we processed is a power of two and there is no incomplete chunk,
@@ -220,22 +218,22 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
 
                 // For which heights do we need to incorporate the subtree labels?
                 // The definition of the unique tree shape for each `chunk_count` implies that there is a complete
-                // subtree of height `k + 1` iff the `k`-th-least-significant bit of `chunk_count` is a one.
+                // subtree on `k` leaves iff the `k`-th-least-significant bit of `chunk_count` is a one.
                 // Handwavily explained, this is the case because the decomposition into complete subtrees amounts to
                 // expressing `chunk_count` as a sum of strictly decreasing powers of two, which is exactly
                 // what a binary representation of a number also does.
 
-                // Hence, we can iterate through the complete subtree sizes that must occur in the tree, in ascending
+                // Hence, we can iterate through the complete subtree-leaf-counts that must occur in the tree, in ascending
                 // order, and successively compute the parent label of the parent nodes joining the rightmost and
                 // second-to-rightmost root respectively.
 
-                // We store these parent labels in an accumulator `acc`, as we iterate. We further store the value `k` such that `k` is the height of the previously processed subtree, and the total number of bytes summarised in the previously processed subtree.
-                // The initial values for these depend on whether we have a partial chunk or not.
-                let mut acc = [0; WIDTH];
-                let (starting_k, mut len) = if self.current_chunk_len > 0 {
-                    // We have a partial chunk. Its label becomes the first accumulated value, and its `k` is always zero (because the partial chunk forms a complete subtree of height one).
-                    // is_root is always false here; if it was true, then chunk_count would have
-                    // been 1, i.e., a power of two, and we would not be in this branch.
+                // We store these parent labels in an accumulator `acc` as we iterate. We further store the value `exponent` such that the subtree in the previous iteration had `2^exponent` leaves, and the total number of bytes summarised in the previously processed subtree.
+
+                // Initialising acc, exponent, and the total length is not entirely obvious, and depends on whether we have a partial chunk or not.
+                let (mut acc, exponent, mut len) = if self.current_chunk_len > 0 {
+                    // We have a partial chunk. The first accumulated value will be the label of that chunk, the exponent will be zero (because our rightmost maximal complete subtree consits of the that chunk only, so it has 2^0 leaves), and the length is the length of the chunk.
+                    let mut acc = [0; WIDTH];
+
                     (self.hash_chunk)(
                         &self.current_chunk[..self.current_chunk_len],
                         false,
@@ -243,26 +241,31 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
                         &mut acc,
                     );
 
-                    (1, self.current_chunk_len as u64)
+                    (acc, 0, self.current_chunk_len as u64)
                 } else {
-                    // If we do not have a partial chunk, we need to find the least k such that
-                    // the tree contains a complete subtree of height `k`. This happens to equal
-                    // The number of trailing zeroes in the binary representation of the number of leaves.
-                    let least_relevant_k = chunk_count.trailing_zeros();
-                    // Then we initialise the accumulator with the precomputed label for that subtree.
-                    // Note that there must be at least one other one bit, since otherwise chunk_count
-                    // would be a power of two, and we would not be in this branch in the first place.
-                    acc = self.right_frontier[least_relevant_k as usize];
+                    // If we do not have a partial chunk, we need to find the rightmost maximal complete subtree for which we already precomputed the label, using it to start the successive iteration.
+                    // The exponent to obtain the number of leaves of that subtree happens to be equal to the number of trailing zeros in `chunk_count`. For reasons.
 
-                    (
-                        least_relevant_k,
-                        (CHUNK_SIZE as u64) * (1 << least_relevant_k),
-                    )
+                    // (The reason is that a number with `k` trailing zeroes is divisible by `k^2`.)
+
+                    let exponent = chunk_count.trailing_zeros();
+
+                    // Knowing this exponent, we can look up the label in the frontier:
+                    let label = self.right_frontier[exponent as usize];
+
+                    // And the number of bytes covered by that tree equals the CHUNK_SIZE times the number of its leaves.
+                    let len = (CHUNK_SIZE as u64) * (1 << exponent);
+
+                    // Note that `chunk_count` has at least *two* one bits, since otherwise chunk_count
+                    // would be a power of two, and we would not be in this branch in the first place.
+                    // This is important for going into the next iteration.
+
+                    (label, exponent + 1, len)
                 };
 
                 println!(
                     "simple starting k {:?}, len {:?}, initial acc {:?}, chunk_count {chunk_count}",
-                    starting_k, len, acc
+                    exponent, len, acc
                 );
 
                 // Now we can build up the accumulator by repeatedly computing the parent label of
@@ -270,26 +273,29 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
                 // When we reached the final subtree, we need to set `is_root` to true in the label computation.
                 // To check for that, we use that the floored base-two logarithm of `chunk_size` is equal to
                 // the height of its greatest complete subtree.
-                for k in starting_k..64 {
-                    if is_bit_set(chunk_count, k - 1 as u32) {
-                        let is_greatest_subtree = chunk_count.ilog2() == k;
+                for exponent in exponent..64 {
+                    if is_bit_set(completed_chunk_count, exponent as u32) {
+                        // If the exponent-th bit of the `completed_chunk_count` is nonzero, then we need to incorporate the rightmost complete tree on `2^exponent` leaves into the label computation.
+
+                        // Check whether this will be the final label coputation for this digest.
+                        let is_greatest_subtree = completed_chunk_count.ilog2() == exponent;
 
                         // The total length of bytes we are summarising in this tree node is the sum of the bytes
                         // in the left tree (easy to compute, since it consists of full chunks only) and the right tree
                         // (which we already know from the previous iteration).
-                        len = (CHUNK_SIZE as u64) * ((1 << k) - 1) + len;
+                        len = (CHUNK_SIZE as u64) * (1 << (exponent)) + len;
 
                         println!(
-                            "simple loop k {k} is_greatest_subtree {is_greatest_subtree} len {len}"
+                            "simple loop exponent {exponent} is_greatest_subtree {is_greatest_subtree} len {len}"
                         );
                         println!(
-                            "simple loop precomputed right_frontier[k - 1] {:?}",
-                            self.right_frontier[(k - 1) as usize]
+                            "simple loop precomputed right_frontier[k] {:?}",
+                            self.right_frontier[(exponent) as usize]
                         );
 
                         let mut next_acc = [0; WIDTH];
                         (self.hash_inner)(
-                            &self.right_frontier[(k - 1) as usize],
+                            &self.right_frontier[(exponent) as usize],
                             &acc,
                             len,
                             is_greatest_subtree,
