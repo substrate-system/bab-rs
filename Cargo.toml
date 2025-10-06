@@ -8,9 +8,7 @@ edition = "2024"
 default = ["william3"]
 
 # Provide an implementation of the WILLIAM3 parameterisation of Bab. Enabled by default.
-william3 = ["dep:arrayref", "dep:arrayvec", "dep:constant_time_eq"]
+william3 = ["dep:arrayref"]
 
 [dependencies]
 arrayref = { version = "0.3.5", optional = true }
-arrayvec = { version = "0.7.4", default-features = false, optional = true }
-constant_time_eq = { version = "0.3.1", default-features = false, optional = true }
