@@ -1,7 +1,7 @@
 use core::cmp::min;
 use std::println;
 
-use crate::CHUNK_SIZE;
+use crate::{CHUNK_SIZE, WIDTH};
 
 use super::{HashChunk, HashInner};
 
@@ -21,7 +21,7 @@ pub struct SimpleHasher<
     len: u64,
     /// Intuitively, this array stores the label of the rightmost vertex of each tree layer which will never change again. More precisely:
     ///
-    /// At index zero, we store the label of the previously processed chunk (when current_chunk_len would reach CHUNK_SIZE, we reset it to zero and update the label at index zero). At index one, we store the root label of the rightmost complete subtree of height two. At index three, we store the root label of the rightmost complete subtree of height three. And so on (index zero does indeed store the root label of the rightmost complete subtree of height one, that's the same as the previous chunk).
+    /// At index zero, we store the label of the previously processed chunk (when current_chunk_len would reach CHUNK_SIZE, we reset it to zero and update the label at index zero). At index one, we store the root label of the rightmost complete subtree on 2^1 leaves. At index three, we store the root label of the rightmost complete subtree on 2^2 leaves. And so on (index zero does indeed store the root label of the rightmost complete subtree on 2^0, this is the same as the previous chunk).
     ///
     /// These label computations always assume that the `is_root` flag is false, since this array is primarily used for containing temporary data for internal computations, not for actual digest computation.
     right_frontier: [[u8; WIDTH]; 64],
@@ -83,7 +83,7 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
         self.current_chunk_len += bytes.len();
 
         if self.current_chunk_len == CHUNK_SIZE {
-            // Oh no, a chunk was completed, real work ahead.
+            // Oh no, a chunk was completed; real work lies ahead.
             debug_assert!(
                 self.number_of_completed_chunks() > 0,
                 "self.len {:?}, self.current_chunk_len {:?}, bytes.len {:?}",
@@ -92,19 +92,20 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
                 bytes.len()
             );
 
-            // First, we update the `right_frontier`.
-            // We always update its index zero, because the chunk we just processed is now the rightmost complete subtree of height one.
-            // Then, we check whether we also just completed a subtree of height two. If no, then we are done. If we did, then we update
-            // index one, and check whether we also just completed a subtree of height three. And so on, until we reached a height for
-            // which we did not just complete a subtree.
-            let mut old_label = [0; WIDTH];
-            for i in 0..64 {
-                let replaced_label = self.update_individual_frontier_index(i, old_label);
+            let chunk_count = self.number_of_completed_chunks(); // Includes the chunk we just completed.
 
-                match replaced_label {
-                    None => break,
-                    Some(replaced) => old_label = replaced,
-                }
+            // First, we update the `right_frontier`.
+            // We always update its index zero, because the chunk we just processed is now the rightmost complete subtree on 2^0 leaves.
+            // Then, we check whether we also just completed a subtree on 2^1. If no, then we are done. If we did, then we update
+            // index one, and check whether we also just completed a subtree on 2^2. And so on, until we reached a height for
+            // which we did not just complete a subtree.
+
+            // The number of subtrees we completed is always one plus the number of trailing zeros in the binary representation of `chunk_count`.
+            let num_completed_subtrees = (chunk_count.trailing_zeros() + 1) as usize;
+
+            let mut left_label = [0; WIDTH];
+            for exponent in 0..num_completed_subtrees {
+                self.update_individual_frontier_index(exponent, &mut left_label);
             }
 
             // Finally, reset the chunk len.
@@ -112,125 +113,70 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
         }
     }
 
-    /// Checks whether the chunk we just completed finished a complete subtree of height `frontier_arr_index + 1`.
-    /// If it did not, does nothing and returns `None`. If it did, updates the label stored
-    /// in `self.right_frontier[frontier_arr_index]`, and returns the old label at that position (i.e., the label it just
-    /// overwrote, because we need that label one final time to compute the label of the next-higher completed subtree, if there is one).
+    /// Updates `self.right_frontier[exponent]` with the label of the complete subtree over the `2^exponent` most recent chunks, with is_root = false. For `exponent == 0`, this is a simple chunk label computation. Otherwise, the inner label is computed from two child labels. The right child label can be simply looked up as `self.right_frontier[exponent - 1]`. The left label is passed to this function via the `left_label` argument. It replaces the contents of `left_label` with the value at `self.right_frontier[exponent]` (before overwriting it). This allows us to pass it as the next right label to the next call of this function with `exponent + 1` (*if* we make such a call at all).
     ///
-    /// For `frontier_arr_index == 0`, the `old_label_of_previous_frontier_arr_index` can be anything and will be ignored.
-    fn update_individual_frontier_index(
-        &mut self,
-        frontier_arr_index: usize,
-        old_label_of_previous_frontier_arr_index: [u8; WIDTH],
-    ) -> Option<[u8; WIDTH]> {
-        // How do we determine whether we just completed a subtree?
-        // First, we need to know the how-manyethst subtree we just completed.
-        let chunk_index = self.number_of_completed_chunks() - 1;
-        // We subtract one, because zero-indexing the count of chunks makes things really nice:
+    /// For `exponent == 0`, the `left_label` argument will be ignored.
+    fn update_individual_frontier_index(&mut self, exponent: usize, left_label: &mut [u8; WIDTH]) {
+        // First, cache the old value at `self.right_frontier[exponent]`, because we need to write that to `left_label` before returning.
+        let next_left_label = self.right_frontier[exponent];
 
-        // Knowing our `chunk_index`, did we just complete a tree?
-        // For `frontier_arr_index == 0`, this is always the case.
-        // For `frontier_arr_index == 1`, this is the case iff the least-significant binary digit of `chunk_index` is a one.
-        // For `frontier_arr_index == 2`, this is the case iff the two least-significant binary digits of `chunk_index` are ones.
-        // For `frontier_arr_index == 3`, this is the case iff the three least-significant binary digits of `chunk_index` are ones.
-        // And so on.
-        // So neat! Binary trees, amiright?
-        // (To see this for yourself, take a piece of paper, put down the three-digit binary numbers
-        // 000, 001, 010, 011, 100, 101, 110, 111), and then draw a complete binary tree with those as the leaves.
-        //
-        // In other words, we need to test whether the number of trailing ones in the binary representation of `chunk_index`
-        // is at least `frontier_arr_index`. And rust happens to have a function for counting trailing ones.
+        // If we are updating a label which happens to cover the *full* input so far, we also compute the label with `is_root = true` and
+        // buffer it explicitly.
+        let update_root_label = self.number_of_completed_chunks() == 1 << exponent;
 
-        let should_do_stuff = (chunk_index.trailing_ones() as usize) >= frontier_arr_index;
+        if exponent == 0 {
+            // If `exponent == 0`, we need to compute the label of a leaf. Easy.
+            (self.hash_chunk)(
+                &self.current_chunk[..self.current_chunk_len],
+                false,
+                &self.hash_chunk_state,
+                &mut self.right_frontier[exponent],
+            );
 
-        println!(
-            "update_individual_frontier_index arr_index {frontier_arr_index} {should_do_stuff} chunk_index {chunk_index}"
-        );
-
-        // If we did not complete a subtree, we simply signal so, and do not need to update anything.
-        if !should_do_stuff {
-            return None;
-        } else {
-            // Okay, we need to actually do stuff. I.e., update `self.right_frontier[frontier_arr_index]`.
-
-            // First, cache the old label, because we need to return that.
-            let old_label = self.right_frontier[frontier_arr_index];
-
-            // We don't compute real digests, only labels for internal processing. The `self.finish()` method will
-            // take care of recomputing labels with `is_root = true` when necessary.
-            let is_root = false;
-
-            // But, for the roots of complete trees that cover *all* chunks we had so far, we do store the
-            // label computed with is_root = true specifically.
-            let store_root_label_so_far = (chunk_index + 1).is_power_of_two();
-
-            if frontier_arr_index == 0 {
-                // If `frontier_arr_index == 0`, we need to compute the label of a leaf. Easy.
-                println!("{:?}", self.current_chunk_len);
-                let mut label = [0; WIDTH];
+            if update_root_label {
                 (self.hash_chunk)(
                     &self.current_chunk[..self.current_chunk_len],
-                    is_root,
+                    true,
                     &self.hash_chunk_state,
-                    &mut label,
+                    &mut self.complete_root_label,
                 );
-
-                if store_root_label_so_far {
-                    (self.hash_chunk)(
-                        &self.current_chunk[..self.current_chunk_len],
-                        store_root_label_so_far,
-                        &self.hash_chunk_state,
-                        &mut self.complete_root_label,
-                    );
-
-                    println!(
-                        "stored root label {:?} for frontier_arr_index {:?}",
-                        self.complete_root_label, frontier_arr_index
-                    );
-                }
-
-                self.right_frontier[frontier_arr_index] = label;
-                println!(
-                    "stored {:?} at frontier_arr_index {:?}",
-                    label, frontier_arr_index
-                );
-            } else {
-                // Else, we need to compute an inner label.
-                // We can compute it from the `old_label_of_previous_frontier_arr_index` and
-                // the new label of the previous frontier arr index - which is stimply stored in the `right_frontier` array,
-                // courtesy of the prior invocation of this method.
-
-                // Since we are working with completed chunks only, the length of the tree we are labelling is
-                // the CHUNK_SIZE times the number of its leaves.
-                let tree_len = (CHUNK_SIZE as u64) * (1 << frontier_arr_index);
-
-                let mut label = [0; WIDTH];
-                (self.hash_inner)(
-                    &old_label_of_previous_frontier_arr_index,
-                    &self.right_frontier[frontier_arr_index - 1],
-                    tree_len,
-                    is_root,
-                    &self.hash_inner_state,
-                    &mut label,
-                );
-
-                if store_root_label_so_far {
-                    (self.hash_inner)(
-                        &old_label_of_previous_frontier_arr_index,
-                        &self.right_frontier[frontier_arr_index - 1],
-                        tree_len,
-                        store_root_label_so_far,
-                        &self.hash_inner_state,
-                        &mut self.complete_root_label,
-                    );
-                }
-
-                self.right_frontier[frontier_arr_index] = label;
             }
+        } else {
+            // Else, we need to compute an inner label.
+            // We can compute it from the `left_label` and the new label of the most recent complete
+            // tree on `exponent - 1` leaves - which is already stored in the `right_frontier` array,
+            // courtesy of the prior invocation of this method.
 
-            // And we are done. Yay!
-            return Some(old_label);
+            // Since we are working with completed chunks only, the length of the tree we are labelling is
+            // the CHUNK_SIZE times the number of its leaves.
+            let tree_len = (CHUNK_SIZE as u64) * (1 << exponent);
+
+            let mut new_label = [0; WIDTH];
+            (self.hash_inner)(
+                &left_label,
+                &self.right_frontier[exponent - 1],
+                tree_len,
+                false,
+                &self.hash_inner_state,
+                &mut new_label,
+            );
+            self.right_frontier[exponent] = new_label;
+
+            if update_root_label {
+                (self.hash_inner)(
+                    &left_label,
+                    &self.right_frontier[exponent - 1],
+                    tree_len,
+                    true,
+                    &self.hash_inner_state,
+                    &mut self.complete_root_label,
+                );
+            }
         }
+
+        // And we are done. Yay!
+        // To finish, overwrite the `left_label` with what will be the left label in the call to this method for `exponent + 1`.
+        *left_label = next_left_label;
     }
 
     /// Returns the number of chunks we have fully processed already.
