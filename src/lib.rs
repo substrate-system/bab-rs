@@ -5,8 +5,8 @@
 //! The crate root exposes the [WILLIAM3](https://worm-blossom.github.io/bab/#instantiations_william) instantiation of Bab, which is a concrete hash function you can use immediately. The [`generic`] module provides parmaterisable implementations of Bab, which you can use to define your own hash functions.
 //!
 //! ```
-//! # #[cfg(feature = "bab")] {
-//! use bab::{batch_hash, SimpleHasher, WIDTH};
+//! # #[cfg(feature = "william3")] {
+//! use bab_rs::{batch_hash, SimpleHasher, WIDTH};
 //! let mut hasher = SimpleHasher::new();
 //! hasher.write(&[0, 1, 2]);
 //! hasher.write(&[3, 4]);

@@ -6,8 +6,8 @@ use crate::{
 /// A stateful hasher for incrementally computing WILLIAM3 digests.
 ///
 /// ```
-/// # #[cfg(feature = "bab")] {
-/// use bab::SimpleHasher;
+/// # #[cfg(feature = "william3")] {
+/// use bab_rs::{SimpleHasher, batch_hash, WIDTH};
 /// let mut hasher = SimpleHasher::new();
 /// hasher.write(&[0, 1, 2]);
 /// hasher.write(&[3, 4]);
