@@ -10,8 +10,8 @@ pub type HashChunk<const WIDTH: usize, HashChunkContext> =
 pub type HashInner<const WIDTH: usize, HashInnerContext> =
     fn(&[u8; WIDTH], &[u8; WIDTH], u64, bool, &HashInnerContext, &mut [u8; WIDTH]);
 
-mod simple_hasher;
-pub use simple_hasher::SimpleHasher;
+mod hasher;
+pub use hasher::Hasher;
 
 mod batch;
 pub use batch::batch_hash;

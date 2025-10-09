@@ -1,8 +1,8 @@
 mod basics;
 mod portable;
 
-mod simple_hasher;
-pub use simple_hasher::SimpleHasher;
+mod hasher;
+pub use hasher::Hasher;
 
 mod batch;
 pub use batch::{batch_hash, batch_hash_keyed};

@@ -6,8 +6,8 @@
 //!
 //! ```
 //! # #[cfg(feature = "william3")] {
-//! use bab_rs::{batch_hash, SimpleHasher, WIDTH};
-//! let mut hasher = SimpleHasher::new();
+//! use bab_rs::{batch_hash, Hasher, WIDTH};
+//! let mut hasher = Hasher::new();
 //! hasher.write(&[0, 1, 2]);
 //! hasher.write(&[3, 4]);
 //! let incrementally_computed_hash = hasher.finish();
