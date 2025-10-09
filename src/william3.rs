@@ -90,8 +90,8 @@ pub(crate) fn hash_inner(
     let flags_end = 0;
 
     let mut message_words = [0; BLOCK_LEN];
-    (&mut message_words[..WIDTH]).copy_from_slice(left_label);
-    (&mut message_words[WIDTH..]).copy_from_slice(right_label);
+    message_words[..WIDTH].copy_from_slice(left_label);
+    message_words[WIDTH..].copy_from_slice(right_label);
 
     hash1(
         &message_words[..],

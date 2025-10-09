@@ -1,5 +1,7 @@
 //! Hashing complete bytestrings in one go. The least flexible (but easiest to implement) form of Bab hashing.
 
+#![allow(clippy::type_complexity)]
+
 /// Computes a Bab digest of the given input bytes, and writes it into `out`.
 ///
 /// This is the simplemost hashing API; it requires the full string to be available at once. See the [`Hasher`](super::Hasher) API for incremental hashing.
@@ -85,8 +87,8 @@ fn do_batch_hash<
 
         // We have computed the labels of the two children, now we can compute the root label and are done.
         hash_inner(
-            &mut left_child_label,
-            &mut right_child_label,
+            &left_child_label,
+            &right_child_label,
             bytes.len() as u64,
             is_root,
             hash_inner_context,

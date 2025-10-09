@@ -30,6 +30,7 @@ pub struct Hasher<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext,
 impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerContext>
     Hasher<WIDTH, CHUNK_SIZE, HashChunkContext, HashInnerContext>
 {
+    #[allow(clippy::type_complexity)]
     /// Creates a new bab hasher, using the given `hash_chunk` and `hash_inner` functions.
     pub fn new(
         hash_chunk: fn(&[u8], bool, &HashChunkContext, &mut [u8; WIDTH]),
@@ -56,7 +57,7 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
         // To not have to handle too many cases (e.g. an input whose length is seven times the chunk length), we split up the input bytes into slices which do not extend across chunk boundaries, and feed those successively to [`self.progress_or_complete_current_chunk`].
         let mut remaining = bytes;
 
-        while remaining.len() > 0 {
+        while !remaining.is_empty() {
             let len_to_complete_current_chunk =
                 min(remaining.len(), CHUNK_SIZE - self.current_chunk_len);
             self.progress_or_complete_current_chunk(&remaining[..len_to_complete_current_chunk]);
@@ -146,7 +147,7 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
 
             let mut new_label = [0; WIDTH];
             (self.hash_inner)(
-                &left_label,
+                left_label,
                 &self.right_frontier[exponent - 1],
                 tree_len,
                 false,
@@ -157,7 +158,7 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
 
             if update_root_label {
                 (self.hash_inner)(
-                    &left_label,
+                    left_label,
                     &self.right_frontier[exponent - 1],
                     tree_len,
                     true,
@@ -193,7 +194,7 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
                 &self.hash_chunk_state,
                 &mut digest,
             );
-            return digest;
+            digest
         } else {
             // Okay, real work ahead. We have a root label of a non-trivial Merkle tree to compute!
 
@@ -206,7 +207,7 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
             if self.current_chunk_len == 0 && chunk_count.is_power_of_two() {
                 // In the special case that the number of chunks we processed is a power of two and there is no incomplete chunk,
                 // we have already precomputed the root label, and stored it in `self.complete_root_label`.
-                return self.complete_root_label;
+                self.complete_root_label
             } else {
                 // Otherwise, we need to compute the root label, using the precomputed labels of the complete
                 // subtrees (each conveniently computed with `is_root = false`) for a tree of `chunk_count` leaves.
@@ -264,7 +265,7 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
                 // To check for that, we use that the floored base-two logarithm of `chunk_size` is equal to
                 // the height of its greatest complete subtree.
                 for exponent in exponent..64 {
-                    if is_bit_set(completed_chunk_count, exponent as u32) {
+                    if is_bit_set(completed_chunk_count, exponent) {
                         // If the exponent-th bit of the `completed_chunk_count` is nonzero, then we need to incorporate the rightmost complete tree on `2^exponent` leaves into the label computation.
 
                         // Check whether this will be the final label coputation for this digest.
@@ -273,7 +274,7 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
                         // The total length of bytes we are summarising in this tree node is the sum of the bytes
                         // in the left tree (easy to compute, since it consists of full chunks only) and the right tree
                         // (which we already know from the previous iteration).
-                        len = (CHUNK_SIZE as u64) * (1 << (exponent)) + len;
+                        len += (CHUNK_SIZE as u64) * (1 << (exponent));
 
                         let mut next_acc = [0; WIDTH];
                         (self.hash_inner)(

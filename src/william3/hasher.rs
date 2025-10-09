@@ -72,6 +72,12 @@ impl Hasher {
     }
 }
 
+impl Default for Hasher {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[test]
 fn test_hasher() {
     let data = [17u8; CHUNK_SIZE * 16];

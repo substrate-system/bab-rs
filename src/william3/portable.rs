@@ -110,9 +110,9 @@ pub fn hash1(
 ) {
     let mut cv = *key;
     let mut block_flags = flags | flags_start;
-    let mut slice = &input[..];
+    let mut slice = input;
 
-    while slice.len() > 0 {
+    while !slice.is_empty() {
         if slice.len() <= BLOCK_LEN {
             block_flags |= flags_end;
         }
@@ -121,7 +121,7 @@ pub fn hash1(
             // The slice len was not divisible by the BLOCK_LEN, and we reached the final block.
             // We need to pad it with zeroes.
             let mut final_block = [0; BLOCK_LEN];
-            (&mut final_block[..slice.len()]).copy_from_slice(slice);
+            final_block[..slice.len()].copy_from_slice(slice);
 
             compress_in_place(&mut cv, &final_block, BLOCK_LEN as u8, counter, block_flags);
         } else {
@@ -144,8 +144,8 @@ pub fn hash1(
 #[inline(always)]
 pub fn words_from_le_bytes_64(bytes: &[u8; 64]) -> [u32; 16] {
     let mut out = [0; 16];
-    out[0] = u32::from_le_bytes(*array_ref!(bytes, 0 * 4, 4));
-    out[1] = u32::from_le_bytes(*array_ref!(bytes, 1 * 4, 4));
+    out[0] = u32::from_le_bytes(*array_ref!(bytes, 0, 4));
+    out[1] = u32::from_le_bytes(*array_ref!(bytes, 4, 4));
     out[2] = u32::from_le_bytes(*array_ref!(bytes, 2 * 4, 4));
     out[3] = u32::from_le_bytes(*array_ref!(bytes, 3 * 4, 4));
     out[4] = u32::from_le_bytes(*array_ref!(bytes, 4 * 4, 4));
@@ -166,8 +166,8 @@ pub fn words_from_le_bytes_64(bytes: &[u8; 64]) -> [u32; 16] {
 #[inline(always)]
 pub fn le_bytes_from_words_32(words: &[u32; 8]) -> [u8; 32] {
     let mut out = [0; 32];
-    *array_mut_ref!(out, 0 * 4, 4) = words[0].to_le_bytes();
-    *array_mut_ref!(out, 1 * 4, 4) = words[1].to_le_bytes();
+    *array_mut_ref!(out, 0, 4) = words[0].to_le_bytes();
+    *array_mut_ref!(out, 4, 4) = words[1].to_le_bytes();
     *array_mut_ref!(out, 2 * 4, 4) = words[2].to_le_bytes();
     *array_mut_ref!(out, 3 * 4, 4) = words[3].to_le_bytes();
     *array_mut_ref!(out, 4 * 4, 4) = words[4].to_le_bytes();
