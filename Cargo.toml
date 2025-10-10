@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 description = "An implementation of the Bab family of hash functions, and its WILLIAM3 instantiation."
 license = "MIT OR Apache-2.0"
+repository = "https://codeberg.org/worm-blossom/bab_rs"
 
 [features]
 
