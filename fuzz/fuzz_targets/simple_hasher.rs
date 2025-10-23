@@ -1,15 +1,13 @@
 #![no_main]
 use libfuzzer_sys::fuzz_target;
 
-use bab::{SimpleHasher, WIDTH, batch_hash, batch_hash_keyed};
+use bab_rs::{Hasher, HasherWrite, WIDTH, William3Hasher, batch_hash, batch_hash_keyed};
 
 fuzz_target!(|data: (Vec<u8>, Option<[u32; 8]>, Vec<usize>)| {
     let (input_bytes, key, mut write_sizes) = data;
     if !write_sizes.iter().any(|size| *size > 0) {
         write_sizes.push(173);
     }
-
-    println!("test input length: {:?}", input_bytes.len());
 
     let mut digest_batch = [0; WIDTH];
 
@@ -19,8 +17,8 @@ fuzz_target!(|data: (Vec<u8>, Option<[u32; 8]>, Vec<usize>)| {
     }
 
     let mut hasher = match key {
-        Some(key) => SimpleHasher::new_keyed(key),
-        None => SimpleHasher::new(),
+        Some(key) => William3Hasher::new_keyed(key),
+        None => William3Hasher::new(),
     };
 
     let mut write_size_index = 0;

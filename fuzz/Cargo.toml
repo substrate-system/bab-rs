@@ -11,7 +11,7 @@ cargo-fuzz = true
 [dependencies]
 libfuzzer-sys = "0.4"
 
-[dependencies.bab]
+[dependencies.bab_rs]
 path = ".."
 
 # Prevent this from interfering with workspaces

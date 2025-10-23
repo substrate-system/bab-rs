@@ -2,7 +2,7 @@ mod basics;
 mod portable;
 
 mod hasher;
-pub use hasher::Hasher;
+pub use hasher::William3Hasher;
 
 mod batch;
 pub use batch::{batch_hash, batch_hash_keyed};

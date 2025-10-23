@@ -1,9 +1,18 @@
 use core::cmp::min;
 
+use anyhash::{Hasher, HasherWrite};
+
 use super::{HashChunk, HashInner};
 
 /// A stateful hasher for incrementally computing Bab digests.
-pub struct Hasher<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerContext> {
+///
+/// Use the [`anyhash::Hasher`] and [`anyhash::HasherWrite`] traits to compute digests. This crate reexports them at the root for convenience.
+pub struct BabHasher<
+    const WIDTH: usize,
+    const CHUNK_SIZE: usize,
+    HashChunkContext,
+    HashInnerContext,
+> {
     /// The `hash_chunk` spec parameter.
     hash_chunk: HashChunk<WIDTH, HashChunkContext>,
     /// The `hash_inner` spec parameter.
@@ -28,7 +37,7 @@ pub struct Hasher<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext,
 }
 
 impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerContext>
-    Hasher<WIDTH, CHUNK_SIZE, HashChunkContext, HashInnerContext>
+    BabHasher<WIDTH, CHUNK_SIZE, HashChunkContext, HashInnerContext>
 {
     #[allow(clippy::type_complexity)]
     /// Creates a new bab hasher, using the given `hash_chunk` and `hash_inner` functions.
@@ -48,20 +57,6 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
             complete_root_label: [0; WIDTH],
             current_chunk: [0; CHUNK_SIZE],
             current_chunk_len: 0,
-        }
-    }
-
-    /// Writes some data into the given Hasher.
-    pub fn write(&mut self, bytes: &[u8]) {
-        // The logic for updating our state when adding new bytes is pretty simple while stying within the same `current_chunk`, and then we need to do some extra work once we finish the current chunk.
-        // To not have to handle too many cases (e.g. an input whose length is seven times the chunk length), we split up the input bytes into slices which do not extend across chunk boundaries, and feed those successively to [`self.progress_or_complete_current_chunk`].
-        let mut remaining = bytes;
-
-        while !remaining.is_empty() {
-            let len_to_complete_current_chunk =
-                min(remaining.len(), CHUNK_SIZE - self.current_chunk_len);
-            self.progress_or_complete_current_chunk(&remaining[..len_to_complete_current_chunk]);
-            remaining = &remaining[len_to_complete_current_chunk..];
         }
     }
 
@@ -177,11 +172,36 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
     fn number_of_completed_chunks(&self) -> u64 {
         self.len / (CHUNK_SIZE as u64)
     }
+}
 
-    /// Returns the digest for the values written so far.
-    ///
-    /// Despite its name, the method does not reset the hasher’s internal state. Additional writes will continue from the current value. If you need to start a fresh hash value, you will have to create a new hasher.
-    pub fn finish(&self) -> [u8; WIDTH] {
+/// Checks whether the k-th-least-significant bit is set to one in `num`.
+/// `k` starts at zero for the elast significant bit.
+fn is_bit_set(num: u64, k: u32) -> bool {
+    ((1 << k) & num) > 0
+}
+
+impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerContext> HasherWrite
+    for BabHasher<WIDTH, CHUNK_SIZE, HashChunkContext, HashInnerContext>
+{
+    /// Writes some data into the given Hasher.
+    fn write(&mut self, bytes: &[u8]) {
+        // The logic for updating our state when adding new bytes is pretty simple while stying within the same `current_chunk`, and then we need to do some extra work once we finish the current chunk.
+        // To not have to handle too many cases (e.g. an input whose length is seven times the chunk length), we split up the input bytes into slices which do not extend across chunk boundaries, and feed those successively to [`self.progress_or_complete_current_chunk`].
+        let mut remaining = bytes;
+
+        while !remaining.is_empty() {
+            let len_to_complete_current_chunk =
+                min(remaining.len(), CHUNK_SIZE - self.current_chunk_len);
+            self.progress_or_complete_current_chunk(&remaining[..len_to_complete_current_chunk]);
+            remaining = &remaining[len_to_complete_current_chunk..];
+        }
+    }
+}
+
+impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerContext>
+    Hasher<[u8; WIDTH]> for BabHasher<WIDTH, CHUNK_SIZE, HashChunkContext, HashInnerContext>
+{
+    fn finish(&self) -> [u8; WIDTH] {
         // So. Here we need to combine the information in `self.right_frontier` with the data
         // of the chunk we are currently processing, in order to obtain a proper digest.
 
@@ -298,10 +318,4 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
             }
         }
     }
-}
-
-/// Checks whether the k-th-least-significant bit is set to one in `num`.
-/// `k` starts at zero for the elast significant bit.
-fn is_bit_set(num: u64, k: u32) -> bool {
-    ((1 << k) & num) > 0
 }

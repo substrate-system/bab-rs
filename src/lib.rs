@@ -6,8 +6,8 @@
 //!
 //! ```
 //! # #[cfg(feature = "william3")] {
-//! use bab_rs::{batch_hash, Hasher, WIDTH};
-//! let mut hasher = Hasher::new();
+//! use bab_rs::{batch_hash, William3Hasher, WIDTH, Hasher, HasherWrite};
+//! let mut hasher = William3Hasher::new();
 //! hasher.write(&[0, 1, 2]);
 //! hasher.write(&[3, 4]);
 //! let incrementally_computed_hash = hasher.finish();
@@ -23,6 +23,8 @@
 //! ```
 
 pub mod generic;
+
+pub use anyhash::{Hasher, HasherWrite};
 
 #[cfg(feature = "william3")]
 mod william3;

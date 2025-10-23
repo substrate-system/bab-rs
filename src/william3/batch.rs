@@ -2,7 +2,7 @@ use crate::{CHUNK_SIZE, HashChunkContext, HashInnerContext, WIDTH, hash_chunk, h
 
 /// Computes the WILLIAM3 digest of the given input bytes, and writes it into `out`.
 ///
-/// This is the simplemost hashing API; it requires the full string to be available at once. See the [`Hasher`](crate::Hasher) API for incremental hashing.
+/// This is the simplemost hashing API; it requires the full string to be available at once. See the [William3`Hasher`](crate::William3Hasher) API for incremental hashing.
 pub fn batch_hash(bytes: &[u8], out: &mut [u8; WIDTH]) {
     let (hash_chunk_context, hash_inner_context) =
         (HashChunkContext::new(), HashInnerContext::new());

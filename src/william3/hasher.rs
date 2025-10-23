@@ -1,14 +1,18 @@
+use anyhash::{Hasher, HasherWrite};
+
 use crate::{
-    CHUNK_SIZE, HashChunkContext, HashInnerContext, WIDTH, generic::Hasher as GenericHasher,
+    CHUNK_SIZE, HashChunkContext, HashInnerContext, WIDTH, generic::BabHasher as GenericHasher,
     hash_chunk, hash_inner,
 };
 
 /// A stateful hasher for incrementally computing WILLIAM3 digests.
 ///
+/// Use the [`anyhash::Hasher`] and [`anyhash::HasherWrite`] traits to compute digests. This crate reexports them at the root for convenience.
+///
 /// ```
 /// # #[cfg(feature = "william3")] {
-/// use bab_rs::{Hasher, batch_hash, WIDTH};
-/// let mut hasher = Hasher::new();
+/// use bab_rs::{William3Hasher, batch_hash, WIDTH, Hasher, HasherWrite};
+/// let mut hasher = William3Hasher::new();
 /// hasher.write(&[0, 1, 2]);
 /// hasher.write(&[3, 4]);
 /// let digest1 = hasher.finish();
@@ -30,11 +34,11 @@ use crate::{
 /// );
 /// # }
 /// ```
-pub struct Hasher {
+pub struct William3Hasher {
     hasher: GenericHasher<WIDTH, CHUNK_SIZE, HashChunkContext, HashInnerContext>,
 }
 
-impl Hasher {
+impl William3Hasher {
     /// Creates a new WILLIAM3 hasher.
     pub fn new() -> Self {
         Self {
@@ -58,21 +62,21 @@ impl Hasher {
             ),
         }
     }
+}
 
-    /// Writes some data into the given Hasher.
-    pub fn write(&mut self, bytes: &[u8]) {
+impl HasherWrite for William3Hasher {
+    fn write(&mut self, bytes: &[u8]) {
         self.hasher.write(bytes)
     }
+}
 
-    /// Returns the digest for the values written so far.
-    ///
-    /// Despite its name, the method does not reset the hasher’s internal state. Additional writes will continue from the current value. If you need to start a fresh hash value, you will have to create a new hasher.
-    pub fn finish(&self) -> [u8; WIDTH] {
+impl Hasher<[u8; WIDTH]> for William3Hasher {
+    fn finish(&self) -> [u8; WIDTH] {
         self.hasher.finish()
     }
 }
 
-impl Default for Hasher {
+impl Default for William3Hasher {
     fn default() -> Self {
         Self::new()
     }
@@ -86,7 +90,7 @@ fn test_hasher() {
         let mut digest_batch = [0; WIDTH];
         crate::batch_hash(&data[..len], &mut digest_batch);
 
-        let mut hasher = Hasher::new();
+        let mut hasher = William3Hasher::new();
         hasher.write(&data[..len]);
         let digest_hasher = hasher.finish();
 

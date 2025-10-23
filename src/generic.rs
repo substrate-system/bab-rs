@@ -11,7 +11,7 @@ pub type HashInner<const WIDTH: usize, HashInnerContext> =
     fn(&[u8; WIDTH], &[u8; WIDTH], u64, bool, &HashInnerContext, &mut [u8; WIDTH]);
 
 mod hasher;
-pub use hasher::Hasher;
+pub use hasher::BabHasher;
 
 mod batch;
 pub use batch::batch_hash;
