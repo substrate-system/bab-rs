@@ -1,8 +1,8 @@
 use anyhash::{Hasher, HasherWrite};
 
 use crate::{
-    CHUNK_SIZE, HashChunkContext, HashInnerContext, WIDTH, generic::BabHasher as GenericHasher,
-    hash_chunk, hash_inner,
+    CHUNK_SIZE, HashChunkContext, HashInnerContext, WIDTH, William3Digest,
+    generic::BabHasher as GenericHasher, hash_chunk, hash_inner,
 };
 
 /// A stateful hasher for incrementally computing WILLIAM3 digests.
@@ -11,13 +11,13 @@ use crate::{
 ///
 /// ```
 /// # #[cfg(feature = "william3")] {
-/// use bab_rs::{William3Hasher, batch_hash, WIDTH, Hasher, HasherWrite};
+/// use bab_rs::{William3Hasher, William3Digest, batch_hash, WIDTH, Hasher, HasherWrite};
 /// let mut hasher = William3Hasher::new();
 /// hasher.write(&[0, 1, 2]);
 /// hasher.write(&[3, 4]);
 /// let digest1 = hasher.finish();
 ///
-/// let mut batch_digest1 = [0; WIDTH];
+/// let mut batch_digest1 = William3Digest::default();
 /// batch_hash(&[0, 1, 2, 3, 4], &mut batch_digest1);
 ///
 /// assert_eq!(digest1, batch_digest1);
@@ -25,7 +25,7 @@ use crate::{
 /// // You can continue using the hasher after calling `finish`.
 /// hasher.write(&[5, 6]);
 ///
-/// let mut batch_digest2 = [0; WIDTH];
+/// let mut batch_digest2 = William3Digest::default();
 /// batch_hash(&[0, 1, 2, 3, 4, 5, 6], &mut batch_digest2);
 ///
 /// assert_eq!(
@@ -70,9 +70,9 @@ impl HasherWrite for William3Hasher {
     }
 }
 
-impl Hasher<[u8; WIDTH]> for William3Hasher {
-    fn finish(&self) -> [u8; WIDTH] {
-        self.hasher.finish()
+impl Hasher<William3Digest> for William3Hasher {
+    fn finish(&self) -> William3Digest {
+        self.hasher.finish().into()
     }
 }
 
@@ -87,7 +87,7 @@ fn test_hasher() {
     let data = [17u8; CHUNK_SIZE * 16];
 
     for len in 0..data.len() {
-        let mut digest_batch = [0; WIDTH];
+        let mut digest_batch = [0; WIDTH].into();
         crate::batch_hash(&data[..len], &mut digest_batch);
 
         let mut hasher = William3Hasher::new();

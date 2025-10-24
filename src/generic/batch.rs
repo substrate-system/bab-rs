@@ -2,6 +2,8 @@
 
 #![allow(clippy::type_complexity)]
 
+use crate::generic::digest::BabDigest;
+
 /// Computes a Bab digest of the given input bytes, and writes it into `out`.
 ///
 /// This is the simplemost hashing API; it requires the full string to be available at once. See the [`BabHasher`](super::BabHasher) API for incremental hashing.
@@ -16,7 +18,7 @@ pub fn batch_hash<
     hash_chunk_context: &HashChunkContext,
     hash_inner_context: &HashInnerContext,
     bytes: &[u8],
-    out: &mut [u8; WIDTH],
+    out: &mut BabDigest<WIDTH>,
 ) {
     // Call a recursive heper function, instruct it to set the is_root flag to true for the digest it produces.
     do_batch_hash::<WIDTH, CHUNK_SIZE, _, _>(
@@ -25,7 +27,7 @@ pub fn batch_hash<
         hash_chunk_context,
         hash_inner_context,
         bytes,
-        out,
+        &mut out.0,
         true,
     );
 }

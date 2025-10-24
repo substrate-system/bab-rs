@@ -2,6 +2,8 @@ use core::cmp::min;
 
 use anyhash::{Hasher, HasherWrite};
 
+use crate::generic::BabDigest;
+
 use super::{HashChunk, HashInner};
 
 /// A stateful hasher for incrementally computing Bab digests.
@@ -199,9 +201,9 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
 }
 
 impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerContext>
-    Hasher<[u8; WIDTH]> for BabHasher<WIDTH, CHUNK_SIZE, HashChunkContext, HashInnerContext>
+    Hasher<BabDigest<WIDTH>> for BabHasher<WIDTH, CHUNK_SIZE, HashChunkContext, HashInnerContext>
 {
-    fn finish(&self) -> [u8; WIDTH] {
+    fn finish(&self) -> BabDigest<WIDTH> {
         // So. Here we need to combine the information in `self.right_frontier` with the data
         // of the chunk we are currently processing, in order to obtain a proper digest.
 
@@ -214,7 +216,7 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
                 &self.hash_chunk_state,
                 &mut digest,
             );
-            digest
+            digest.into()
         } else {
             // Okay, real work ahead. We have a root label of a non-trivial Merkle tree to compute!
 
@@ -227,7 +229,7 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
             if self.current_chunk_len == 0 && chunk_count.is_power_of_two() {
                 // In the special case that the number of chunks we processed is a power of two and there is no incomplete chunk,
                 // we have already precomputed the root label, and stored it in `self.complete_root_label`.
-                self.complete_root_label
+                self.complete_root_label.into()
             } else {
                 // Otherwise, we need to compute the root label, using the precomputed labels of the complete
                 // subtrees (each conveniently computed with `is_root = false`) for a tree of `chunk_count` leaves.
@@ -308,7 +310,7 @@ impl<const WIDTH: usize, const CHUNK_SIZE: usize, HashChunkContext, HashInnerCon
                         acc = next_acc;
 
                         if is_greatest_subtree {
-                            return acc;
+                            return acc.into();
                         }
                     }
                 }

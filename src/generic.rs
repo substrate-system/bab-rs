@@ -15,3 +15,6 @@ pub use hasher::BabHasher;
 
 mod batch;
 pub use batch::batch_hash;
+
+mod digest;
+pub use digest::BabDigest;
