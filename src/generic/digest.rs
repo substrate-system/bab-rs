@@ -22,6 +22,12 @@ impl<const WIDTH: usize> PartialEq for BabDigest<WIDTH> {
     }
 }
 
+impl<const WIDTH: usize> Default for BabDigest<WIDTH> {
+    fn default() -> Self {
+        [0; WIDTH].into()
+    }
+}
+
 impl<const WIDTH: usize> Drop for BabDigest<WIDTH> {
     fn drop(&mut self) {
         self.0.zeroize();

@@ -6,13 +6,13 @@
 //!
 //! ```
 //! # #[cfg(feature = "william3")] {
-//! use bab_rs::{batch_hash, William3Hasher, WIDTH, Hasher, HasherWrite};
+//! use bab_rs::{batch_hash, William3Hasher, William3Digest, WIDTH, Hasher, HasherWrite};
 //! let mut hasher = William3Hasher::new();
 //! hasher.write(&[0, 1, 2]);
 //! hasher.write(&[3, 4]);
 //! let incrementally_computed_hash = hasher.finish();
 //!
-//! let mut batch_digest = [0; WIDTH];
+//! let mut batch_digest = William3Digest::default();
 //! batch_hash(&[0, 1, 2, 3, 4], &mut batch_digest);
 //!
 //! assert_eq!(

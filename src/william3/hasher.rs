@@ -11,13 +11,13 @@ use crate::{
 ///
 /// ```
 /// # #[cfg(feature = "william3")] {
-/// use bab_rs::{William3Hasher, batch_hash, WIDTH, Hasher, HasherWrite};
+/// use bab_rs::{William3Hasher, William3Digest, batch_hash, WIDTH, Hasher, HasherWrite};
 /// let mut hasher = William3Hasher::new();
 /// hasher.write(&[0, 1, 2]);
 /// hasher.write(&[3, 4]);
 /// let digest1 = hasher.finish();
 ///
-/// let mut batch_digest1 = [0; WIDTH];
+/// let mut batch_digest1 = William3Digest::default();
 /// batch_hash(&[0, 1, 2, 3, 4], &mut batch_digest1);
 ///
 /// assert_eq!(digest1, batch_digest1);
@@ -25,7 +25,7 @@ use crate::{
 /// // You can continue using the hasher after calling `finish`.
 /// hasher.write(&[5, 6]);
 ///
-/// let mut batch_digest2 = [0; WIDTH];
+/// let mut batch_digest2 = William3Digest::default();
 /// batch_hash(&[0, 1, 2, 3, 4, 5, 6], &mut batch_digest2);
 ///
 /// assert_eq!(

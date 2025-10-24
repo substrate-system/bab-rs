@@ -12,7 +12,7 @@ impl From<BabDigest<WIDTH>> for William3Digest {
 
 impl From<[u8; WIDTH]> for William3Digest {
     fn from(value: [u8; WIDTH]) -> Self {
-        value.into()
+        Self(value.into())
     }
 }
 
@@ -25,5 +25,11 @@ impl From<William3Digest> for BabDigest<WIDTH> {
 impl From<William3Digest> for [u8; WIDTH] {
     fn from(value: William3Digest) -> Self {
         value.0.into()
+    }
+}
+
+impl Default for William3Digest {
+    fn default() -> Self {
+        [0; WIDTH].into()
     }
 }
