@@ -1,3 +1,11 @@
+# 0.4.0
+
+Remove the `impl<const WIDTH: usize> From<BabDigest<WIDTH>> for [u8; WIDTH]` and
+`impl From<William3Digest> for [u8; WIDTH]` impls, to make it less likely that
+users accidentally sidestep constant-time-equality checks and/or zero-on-drop.
+Replaces these with non-trait-backed `into_bytes`, `as_bytes`, and
+`as_mut_bytes` methods.
+
 # 0.3.0
 
 Introduce proper wrapper types for digests: `BabDigest` and `William3Digest`.
