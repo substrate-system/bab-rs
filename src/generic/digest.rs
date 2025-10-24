@@ -1,6 +1,7 @@
 use zeroize::Zeroize;
 
 #[derive(Eq, PartialOrd, Ord, Clone, Debug)]
+#[cfg_attr(feature = "dev", derive(arbitrary::Arbitrary))]
 #[repr(transparent)]
 pub struct BabDigest<const WIDTH: usize>(pub(crate) [u8; WIDTH]);
 

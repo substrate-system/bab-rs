@@ -1,3 +1,8 @@
+## 0.4.1
+
+Add the `dev` feature. When it is enabled, `BabDigest` and `William3Digest`
+implement the `Arbitrary` trait.
+
 # 0.4.0
 
 Remove the `impl<const WIDTH: usize> From<BabDigest<WIDTH>> for [u8; WIDTH]` and
