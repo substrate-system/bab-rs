@@ -1,9 +1,7 @@
 #![no_main]
 use libfuzzer_sys::fuzz_target;
 
-use bab_rs::{
-    Hasher, HasherWrite, WIDTH, William3Digest, William3Hasher, batch_hash, batch_hash_keyed,
-};
+use bab_rs::{Hasher, HasherWrite, William3Digest, William3Hasher, batch_hash, batch_hash_keyed};
 
 fuzz_target!(|data: (Vec<u8>, Option<[u32; 8]>, Vec<usize>)| {
     let (input_bytes, key, mut write_sizes) = data;
