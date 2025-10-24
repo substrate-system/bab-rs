@@ -1,4 +1,6 @@
-#[derive(PartialEq, Eq, PartialOrd, Ord, Copy, Clone, Debug)]
+use zeroize::Zeroize;
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
 #[repr(transparent)]
 pub struct BabDigest<const WIDTH: usize>(pub(crate) [u8; WIDTH]);
 
@@ -11,5 +13,11 @@ impl<const WIDTH: usize> From<[u8; WIDTH]> for BabDigest<WIDTH> {
 impl<const WIDTH: usize> From<BabDigest<WIDTH>> for [u8; WIDTH] {
     fn from(value: BabDigest<WIDTH>) -> Self {
         value.0
+    }
+}
+
+impl<const WIDTH: usize> Drop for BabDigest<WIDTH> {
+    fn drop(&mut self) {
+        self.0.zeroize();
     }
 }
