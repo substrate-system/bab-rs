@@ -1,6 +1,7 @@
 use crate::{WIDTH, generic::BabDigest};
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
+#[cfg_attr(feature = "dev", derive(arbitrary::Arbitrary))]
 #[repr(transparent)]
 pub struct William3Digest(pub(crate) BabDigest<WIDTH>);
 

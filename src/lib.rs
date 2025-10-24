@@ -1,4 +1,4 @@
-#![no_std]
+#![cfg_attr(not(feature = "std"), no_std)]
 
 //! An implementation of the [Bab](https://worm-blossom.github.io/bab/) family of hash functions.
 //!
@@ -21,6 +21,12 @@
 //! );
 //! # }
 //! ```
+//!
+//! ## Features
+//!
+//! The `william3` feature controls whether the implementations of WILLIAM3 are included. This feature is enabled by default.
+//!
+//! The `dev` feature adds implementations of the [`Arbitrary`](https://docs.rs/arbitrary/latest/arbitrary/trait.Arbitrary.html) trait to various types. This feature is not enabled by default.
 
 pub mod generic;
 
