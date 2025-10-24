@@ -39,7 +39,7 @@ checksum = "76a2e8124351fda1ef8aaaa3bbd7ebbcb486bbcd4225aca0aa0d84bb2db8fecb"
 
 [[package]]
 name = "bab_rs"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "anyhash",
  "arbitrary",
