@@ -1,3 +1,7 @@
+## 0.4.2
+
+Derive `core::hash::Hash` on `BabDigest` and `William3Digest`.
+
 ## 0.4.1
 
 Add the `dev` feature. When it is enabled, `BabDigest` and `William3Digest`
