@@ -7,6 +7,9 @@ pub use hasher::William3Hasher;
 mod batch;
 pub use batch::{batch_hash, batch_hash_keyed};
 
+mod digest;
+pub use digest::William3Digest;
+
 use crate::william3::{
     basics::{BLOCK_LEN, CHUNK_END, CHUNK_START, IV, KEYED_HASH, PARENT, ROOT},
     portable::hash1,
