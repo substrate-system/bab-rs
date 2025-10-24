@@ -4,15 +4,32 @@ use zeroize::Zeroize;
 #[repr(transparent)]
 pub struct BabDigest<const WIDTH: usize>(pub(crate) [u8; WIDTH]);
 
-impl<const WIDTH: usize> From<[u8; WIDTH]> for BabDigest<WIDTH> {
-    fn from(value: [u8; WIDTH]) -> Self {
-        Self(value)
+impl<const WIDTH: usize> BabDigest<WIDTH> {
+    /// Converts `self` into the underlying byte array.
+    ///
+    /// This type deliberately does not provide this functionality through a trait, in order to make it less likely to leak values secrets.
+    pub fn into_bytes(self) -> [u8; WIDTH] {
+        self.0
+    }
+
+    /// Returns a reference to the underlying byte array.
+    ///
+    /// This type deliberately does not provide this functionality through a trait, in order to make it less likely to leak values secrets.
+    pub fn as_bytes(&self) -> &[u8; WIDTH] {
+        &self.0
+    }
+
+    /// Returns a mutable reference to the underlying byte array.
+    ///
+    /// This type deliberately does not provide this functionality through a trait, in order to make it less likely to leak values secrets.
+    pub fn as_mut_bytes(&mut self) -> &mut [u8; WIDTH] {
+        &mut self.0
     }
 }
 
-impl<const WIDTH: usize> From<BabDigest<WIDTH>> for [u8; WIDTH] {
-    fn from(value: BabDigest<WIDTH>) -> Self {
-        value.0
+impl<const WIDTH: usize> From<[u8; WIDTH]> for BabDigest<WIDTH> {
+    fn from(value: [u8; WIDTH]) -> Self {
+        Self(value)
     }
 }
 
