@@ -1,3 +1,11 @@
+## 0.4.3
+
+Add `impl AsRef<BabDigest<WIDTH>> for William3Digest` and
+`impl AsMut<BabDigest<WIDTH>> for William3Digest`.
+
+Implement the traits of the `order_theory` crate for `BabDigest` and
+`William3Digest`.
+
 ## 0.4.2
 
 Derive `core::hash::Hash` on `BabDigest` and `William3Digest`.

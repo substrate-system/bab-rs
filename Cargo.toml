@@ -1,6 +1,6 @@
 [package]
 name = "bab_rs"
-version = "0.4.2"
+version = "0.4.3"
 edition = "2024"
 description = "An implementation of the Bab family of hash functions, and its WILLIAM3 instantiation."
 license = "MIT OR Apache-2.0"
