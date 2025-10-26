@@ -45,6 +45,7 @@ dependencies = [
  "arbitrary",
  "arrayref",
  "constant_time_eq",
+ "order_theory",
  "zeroize",
 ]
 
@@ -64,6 +65,12 @@ dependencies = [
  "quote",
  "syn",
 ]
+
+[[package]]
+name = "order_theory"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fc1f891963888e63c6ce1699365269a15e2f0b05173a48c80f899200f3eaa975"
 
 [[package]]
 name = "proc-macro2"

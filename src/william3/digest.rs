@@ -1,3 +1,8 @@
+use order_theory::{
+    GreatestElement, LeastElement, LowerSemilattice, PredecessorExceptForLeast,
+    SuccessorExceptForGreatest, TryPredecessor, TrySuccessor, UpperSemilattice,
+};
+
 use crate::{WIDTH, generic::BabDigest};
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Hash)]
@@ -46,8 +51,60 @@ impl From<William3Digest> for BabDigest<WIDTH> {
     }
 }
 
-impl Default for William3Digest {
-    fn default() -> Self {
-        [0; WIDTH].into()
+impl AsRef<BabDigest<WIDTH>> for William3Digest {
+    fn as_ref(&self) -> &BabDigest<WIDTH> {
+        &self.0
     }
 }
+
+impl AsMut<BabDigest<WIDTH>> for William3Digest {
+    fn as_mut(&mut self) -> &mut BabDigest<WIDTH> {
+        &mut self.0
+    }
+}
+
+impl Default for William3Digest {
+    fn default() -> Self {
+        <BabDigest<WIDTH>>::default().into()
+    }
+}
+
+impl LeastElement for William3Digest {
+    fn least() -> Self {
+        <BabDigest<WIDTH>>::least().into()
+    }
+}
+
+impl GreatestElement for William3Digest {
+    fn greatest() -> Self {
+        <BabDigest<WIDTH>>::greatest().into()
+    }
+}
+
+impl LowerSemilattice for William3Digest {
+    fn greatest_lower_bound(&self, other: &Self) -> Self {
+        self.0.greatest_lower_bound(other.as_ref()).into()
+    }
+}
+
+impl UpperSemilattice for William3Digest {
+    fn least_upper_bound(&self, other: &Self) -> Self {
+        self.0.least_upper_bound(other.as_ref()).into()
+    }
+}
+
+impl TryPredecessor for William3Digest {
+    fn try_predecessor(&self) -> Option<Self> {
+        self.0.try_predecessor().map(Self)
+    }
+}
+
+impl TrySuccessor for William3Digest {
+    fn try_successor(&self) -> Option<Self> {
+        self.0.try_successor().map(Self)
+    }
+}
+
+impl PredecessorExceptForLeast for William3Digest {}
+
+impl SuccessorExceptForGreatest for William3Digest {}

@@ -1,5 +1,10 @@
 use zeroize::Zeroize;
 
+use order_theory::{
+    GreatestElement, LeastElement, LowerSemilattice, PredecessorExceptForLeast,
+    SuccessorExceptForGreatest, TryPredecessor, TrySuccessor, UpperSemilattice,
+};
+
 #[derive(Eq, PartialOrd, Ord, Clone, Debug, Hash)]
 #[cfg_attr(feature = "dev", derive(arbitrary::Arbitrary))]
 #[repr(transparent)]
@@ -51,3 +56,43 @@ impl<const WIDTH: usize> Drop for BabDigest<WIDTH> {
         self.0.zeroize();
     }
 }
+
+impl<const WIDTH: usize> LeastElement for BabDigest<WIDTH> {
+    fn least() -> Self {
+        <[u8; WIDTH]>::least().into()
+    }
+}
+
+impl<const WIDTH: usize> GreatestElement for BabDigest<WIDTH> {
+    fn greatest() -> Self {
+        <[u8; WIDTH]>::greatest().into()
+    }
+}
+
+impl<const WIDTH: usize> LowerSemilattice for BabDigest<WIDTH> {
+    fn greatest_lower_bound(&self, other: &Self) -> Self {
+        self.0.greatest_lower_bound(other.as_bytes()).into()
+    }
+}
+
+impl<const WIDTH: usize> UpperSemilattice for BabDigest<WIDTH> {
+    fn least_upper_bound(&self, other: &Self) -> Self {
+        self.0.least_upper_bound(other.as_bytes()).into()
+    }
+}
+
+impl<const WIDTH: usize> TryPredecessor for BabDigest<WIDTH> {
+    fn try_predecessor(&self) -> Option<Self> {
+        self.0.try_predecessor().map(Self)
+    }
+}
+
+impl<const WIDTH: usize> TrySuccessor for BabDigest<WIDTH> {
+    fn try_successor(&self) -> Option<Self> {
+        self.0.try_successor().map(Self)
+    }
+}
+
+impl<const WIDTH: usize> PredecessorExceptForLeast for BabDigest<WIDTH> {}
+
+impl<const WIDTH: usize> SuccessorExceptForGreatest for BabDigest<WIDTH> {}
