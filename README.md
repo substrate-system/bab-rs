@@ -6,3 +6,17 @@ of hash functions in general, and the
 instantiation in particular.
 
 See the [docs](https://docs.rs/bab_rs/latest) for more details.
+
+## Fork
+
+This is a fork of [worm-blossom/bab_rs](https://codeberg.org/worm-blossom/bab_rs).
+
+## WASM
+
+This repo can compile to web assembly.
+
+```sh
+./build-wasm.sh
+```
+
+This will create a `pkg/` directory containing the compiled WebAssembly module.

@@ -36,3 +36,6 @@ pub use anyhash::{Hasher, HasherWrite};
 mod william3;
 #[cfg(feature = "william3")]
 pub use william3::*;
+
+#[cfg(feature = "wasm")]
+pub mod wasm;
