@@ -11,6 +11,14 @@ See the [docs](https://docs.rs/bab_rs/latest) for more details.
 
 This is a fork of [worm-blossom/bab_rs](https://codeberg.org/worm-blossom/bab_rs).
 
+### Example
+
+State [the example page](./example/) with a localhost `vite` server.
+
+```sh
+npm start
+```
+
 ## WASM
 
 This repo can compile to web assembly.
