@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bab WILLIAM3 Hash - WASM Example</title>
+    <style>
+        body {
+            font-family: monospace;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        input, button {
+            font-family: monospace;
+            padding: 8px;
+            margin: 5px;
+        }
+        #input {
+            width: 400px;
+        }
+        #output {
+            background: #f0f0f0;
+            padding: 10px;
+            margin-top: 20px;
+            word-break: break-all;
+        }
+        .method {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+        }
+        h2 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bab WILLIAM3 Hash Function (WASM)</h1>
+
+    <div class="method">
+        <h2>Batch Hashing</h2>
+        <input type="text" id="input" placeholder="Enter text to hash" value="hello world">
+        <button onclick="hashBatch()">Hash (Batch)</button>
+        <div id="output"></div>
+    </div>
+
+    <div class="method">
+        <h2>Incremental Hashing</h2>
+        <input type="text" id="input1" placeholder="First part" value="hello ">
+        <input type="text" id="input2" placeholder="Second part" value="world">
+        <button onclick="hashIncremental()">Hash (Incremental)</button>
+        <div id="output2"></div>
+    </div>
+
+    <script type="module">
+        import init, { william3_hash, William3HasherWasm, william3_width } from './pkg/bab.js';
+
+        // Initialize the WASM module
+        await init();
+
+        console.log('WILLIAM3 digest width:', william3_width(), 'bytes');
+
+        // Make functions available globally
+        window.hashBatch = function() {
+            const input = document.getElementById('input').value;
+            const encoder = new TextEncoder();
+            const data = encoder.encode(input);
+
+            const hash = william3_hash(data);
+
+            document.getElementById('output').innerHTML = `
+                <strong>Input:</strong> ${input}<br>
+                <strong>Hash:</strong> ${hash}
+            `;
+        };
+
+        window.hashIncremental = function() {
+            const input1 = document.getElementById('input1').value;
+            const input2 = document.getElementById('input2').value;
+
+            const encoder = new TextEncoder();
+            const hasher = new William3HasherWasm();
+
+            hasher.write(encoder.encode(input1));
+            hasher.write(encoder.encode(input2));
+
+            const hash = hasher.finish_hex();
+
+            document.getElementById('output2').innerHTML = `
+                <strong>Part 1:</strong> ${input1}<br>
+                <strong>Part 2:</strong> ${input2}<br>
+                <strong>Combined input:</strong> ${input1}${input2}<br>
+                <strong>Hash:</strong> ${hash}
+            `;
+        };
+
+        // Hash the default value on load
+        hashBatch();
+        hashIncremental();
+    </script>
+</body>
+</html>

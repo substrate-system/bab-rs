@@ -11,7 +11,7 @@ use crate::{
 ///
 /// ```
 /// # #[cfg(feature = "william3")] {
-/// use bab_rs::{William3Hasher, William3Digest, batch_hash, WIDTH, Hasher, HasherWrite};
+/// use bab::{William3Hasher, William3Digest, batch_hash, WIDTH, Hasher, HasherWrite};
 /// let mut hasher = William3Hasher::new();
 /// hasher.write(&[0, 1, 2]);
 /// hasher.write(&[3, 4]);

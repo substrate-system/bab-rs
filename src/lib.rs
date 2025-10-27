@@ -6,7 +6,7 @@
 //!
 //! ```
 //! # #[cfg(feature = "william3")] {
-//! use bab_rs::{batch_hash, William3Hasher, William3Digest, WIDTH, Hasher, HasherWrite};
+//! use bab::{batch_hash, William3Hasher, William3Digest, WIDTH, Hasher, HasherWrite};
 //! let mut hasher = William3Hasher::new();
 //! hasher.write(&[0, 1, 2]);
 //! hasher.write(&[3, 4]);
@@ -36,3 +36,6 @@ pub use anyhash::{Hasher, HasherWrite};
 mod william3;
 #[cfg(feature = "william3")]
 pub use william3::*;
+
+#[cfg(feature = "wasm")]
+pub mod wasm;

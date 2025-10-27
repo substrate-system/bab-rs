@@ -1,1 +1,6 @@
 /target
+/pkg
+test-wasm.mjs
+.claude
+public
+node_modules

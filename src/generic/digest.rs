@@ -8,6 +8,8 @@ use order_theory::{
 #[derive(Eq, PartialOrd, Ord, Clone, Debug, Hash)]
 #[cfg_attr(feature = "dev", derive(arbitrary::Arbitrary))]
 #[repr(transparent)]
+// Allow deriving Hash with manual PartialEq - the manual impl is for constant-time comparison
+#[allow(clippy::derived_hash_with_manual_eq)]
 pub struct BabDigest<const WIDTH: usize>(pub(crate) [u8; WIDTH]);
 
 impl<const WIDTH: usize> BabDigest<WIDTH> {

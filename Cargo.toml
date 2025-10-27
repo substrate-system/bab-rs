@@ -1,17 +1,22 @@
 [package]
-name = "bab_rs"
-version = "0.4.3"
+name = "bab"
+version = "0.4.4"
 edition = "2024"
 description = "An implementation of the Bab family of hash functions, and its WILLIAM3 instantiation."
 license = "MIT OR Apache-2.0"
-repository = "https://codeberg.org/worm-blossom/bab_rs"
+repository = "https://github.com/substrate-system/bab-rs"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
 
 [features]
 default = ["william3"]
 std = []
 dev = ["dep:arbitrary", "std"]
+wasm = ["dep:wasm-bindgen"]
 
-# Provide an implementation of the WILLIAM3 parameterisation of Bab. Enabled by default.
+# Provide an implementation of the WILLIAM3 parameterisation of Bab.
+# Enabled by default.
 william3 = ["dep:arrayref"]
 
 [dependencies]
@@ -23,6 +28,9 @@ order_theory = "0.1.2"
 
 # Dependencies when enabling the `dev` feature:
 arbitrary = { version = "1.0.2", features = ["derive"], optional = true }
+
+# Dependencies when enabling the `wasm` feature:
+wasm-bindgen = { version = "0.2", optional = true }
 
 # docs.rs-specific configuration
 [package.metadata.docs.rs]
