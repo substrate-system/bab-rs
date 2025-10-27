@@ -2,15 +2,13 @@
 
 Compile the Bab hash function to WASM.
 
-
 ## Prerequisites
 
 Install `wasm-pack`:
 
-```bash
+```sh
 cargo install wasm-pack
 ```
-
 
 ## Building
 
@@ -41,7 +39,7 @@ python3 -m http.server 8000
 
 After building, you can import and use the module:
 
-```javascript
+```js
 import init, { william3_hash, William3HasherWasm } from './pkg/bab_rs.js';
 
 // Initialize the WASM module
@@ -78,7 +76,8 @@ console.log('Incremental hash:', incrementalHash);
 
 ## Build Targets
 
-The default build script compiles for the `web` target. You can also build for other targets:
+The default build script compiles for the `web` target. You can also build for
+other targets:
 
 ```bash
 # For Node.js

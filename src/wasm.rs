@@ -3,12 +3,12 @@
 use wasm_bindgen::prelude::*;
 
 #[cfg(feature = "william3")]
-use crate::{batch_hash, William3Digest, William3Hasher, Hasher, HasherWrite, WIDTH};
+use crate::{Hasher, HasherWrite, WIDTH, William3Digest, William3Hasher, batch_hash};
 
 extern crate alloc;
-use alloc::vec::Vec;
-use alloc::string::String;
 use alloc::format;
+use alloc::string::String;
+use alloc::vec::Vec;
 
 /// Hash data using WILLIAM3 in a single batch operation.
 /// Returns the hash as a hex string.
@@ -77,7 +77,8 @@ pub fn william3_width() -> usize {
 
 // Helper function to convert bytes to hex string
 fn hex_encode(bytes: &[u8]) -> String {
-    bytes.iter()
+    bytes
+        .iter()
         .map(|b| format!("{:02x}", b))
         .collect::<String>()
 }
