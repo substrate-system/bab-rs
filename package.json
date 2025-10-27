@@ -1,7 +1,7 @@
 {
     "scripts": {
         "start": "vite",
-        "build-example": "mkdir -p ./public && rm -rf ./public/* && vite --mode staging --base=\"/bab-rs\" build"
+        "build-example": "./build-wasm.sh && mkdir -p ./public && rm -rf ./public/* && vite --mode staging --base=\"/bab-rs\" build"
     },
     "devDependencies": {
         "browserslist": "^4.27.0",
