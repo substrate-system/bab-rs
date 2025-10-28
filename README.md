@@ -109,7 +109,7 @@ This `pkg` directory is what gets published.
 
 ## bump the version and publish
 
-`Cargo.tonl` is the source of truth for the version, because this is primarily
+`Cargo.toml` is the source of truth for the version, because this is primarily
 a rust package.
 
 ### Bump the version
