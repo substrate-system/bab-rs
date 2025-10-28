@@ -136,11 +136,7 @@ cargo set-version 0.5.0
 ```
 
 
-### Publish
-
-Publish the package to `npm`.
-
-### Build the WASM package
+### Build and publish to `npm`
 
 Frist build the package. It will use the version number from `Cargo.toml`.
 
@@ -148,13 +144,11 @@ Frist build the package. It will use the version number from `Cargo.toml`.
 ./build-wasm.sh
 ```
 
-### Navigate to the generated package directory
+Then publish to `npm`.
 
 ```sh
 cd pkg
 ```
-
-### publish
 
 ```sh
 npm publish
@@ -166,8 +160,17 @@ npm publish
 
 ## Test
 
+The library is `no_std` by default, so tests require the `std` feature:
+
 ```sh
+# Run tests
 cargo test --features std
+
+# Or use the convenient alias
+cargo t
+
+# Run all checks (format, clippy, tests)
+cargo check-all
 ```
 
 ## Publish to crates.io

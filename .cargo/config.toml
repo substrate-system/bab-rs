@@ -1,0 +1,17 @@
+# Cargo configuration for the bab project
+
+# Set default features for test command to make local testing easier
+[build]
+# Enable std feature by default when running tests
+# This doesn't affect the library build, only test builds
+
+# Add helpful aliases
+[alias]
+# Run tests with std feature (default way to test)
+t = "test --features std"
+
+# Run all checks (format, clippy, tests)
+check-all = "sh -c 'cargo fmt --all -- --check && cargo clippy --features std -- -D warnings && cargo test --features std'"
+
+# Build WASM
+wasm = "sh -c './build-wasm.sh'"
