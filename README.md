@@ -8,26 +8,25 @@ of hash functions in general, and the
 [WILLIAM3](https://worm-blossom.github.io/bab/#instantiations_william)
 instantiation in particular.
 
-**[Try the live demo →](https://substrate-system.github.io/bab-rs/)**
+[Try the live demo](https://substrate-system.github.io/bab-rs/)
 
-See the [docs](https://docs.rs/bab_rs/latest) for more details.
+See the [docs](https://docs.rs/bab_rs/latest) for more details
+(this is the repo that I forked to create this package).
 
 <details><summary><h2>Contents</h2></summary>
 
 <!-- toc -->
 
 - [Fork](#fork)
-  * [Example](#example)
+- [Install](#install)
+- [Example](#example)
 - [WASM](#wasm)
   * [Prerequisites](#prerequisites)
   * [Compile](#compile)
 - [bump the version and publish](#bump-the-version-and-publish)
   * [Bump the version](#bump-the-version)
   * [Install cargo-edit (first time only)](#install-cargo-edit-first-time-only)
-  * [Publish](#publish)
-  * [Build the WASM package](#build-the-wasm-package)
-  * [Navigate to the generated package directory](#navigate-to-the-generated-package-directory)
-  * [publish](#publish)
+  * [Build and publish to `npm`](#build-and-publish-to-npm)
 - [Test](#test)
 - [Publish to crates.io](#publish-to-cratesio)
 - [Consume](#consume)
@@ -42,7 +41,17 @@ This is a fork of [worm-blossom/bab_rs](https://codeberg.org/worm-blossom/bab_rs
 
 This fork builds a web assembly version of the wormblossom rust library.
 
-### Example
+## Install
+
+This is published as an npm package.
+
+```sh
+npm i -S @substrate-system/bab
+```
+
+Installing via `npm` will give you access to the WASM files.
+
+## Example
 
 ```js
 import init, {
@@ -74,7 +83,7 @@ npm start
 
 ## WASM
 
-Compile the Rust code to web assembly.
+This project compiles Rust code to web assembly.
 
 ### Prerequisites
 
@@ -90,7 +99,9 @@ cargo install wasm-pack
 npm run build
 ```
 
-This will create a `pkg/` directory containing the compiled WebAssembly module.
+This npm script calls a local shell script, [build-was.sh](./build-wasm.sh),
+which will create a `pkg/` directory and compile web assembly to it.
+This `pkg` directory is what gets published.
 
 
 -------
