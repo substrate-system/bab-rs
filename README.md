@@ -51,9 +51,14 @@ await init()
 const input = 'hello bab'
 const encoder = new TextEncoder()
 const data = encoder.encode(input)
-
 const hash = william3_hash(data)
-console.log(hash)
+
+const hasher = new William3HasherWasm()
+hasher.write(encoder.encode('hello'))
+const hash2 = hasher.finish_hex();
+
+console.log(hash2)
+// 5d70555767754cbd...
 ```
 
 Start [the example page](./example/) with a localhost `vite` server:
