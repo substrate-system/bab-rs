@@ -1,5 +1,6 @@
 # Bab
 
+[![Test](https://github.com/substrate-system/bab-rs/actions/workflows/test.yml/badge.svg)](https://github.com/substrate-system/bab-rs/actions/workflows/test.yml)
 [![Deploy Demo](https://github.com/substrate-system/bab-rs/actions/workflows/deploy-demo.yml/badge.svg)](https://github.com/substrate-system/bab-rs/actions/workflows/deploy-demo.yml)
 
 A Rust implementation of the [Bab](https://worm-blossom.github.io/bab/) family
