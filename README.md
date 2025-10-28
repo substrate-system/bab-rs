@@ -1,9 +1,13 @@
 # Bab
 
+[![Deploy Demo](https://github.com/substrate-system/bab-rs/actions/workflows/deploy-demo.yml/badge.svg)](https://github.com/substrate-system/bab-rs/actions/workflows/deploy-demo.yml)
+
 A Rust implementation of the [Bab](https://worm-blossom.github.io/bab/) family
 of hash functions in general, and the
 [WILLIAM3](https://worm-blossom.github.io/bab/#instantiations_william)
 instantiation in particular.
+
+**[Try the live demo →](https://substrate-system.github.io/bab-rs/)**
 
 See the [docs](https://docs.rs/bab_rs/latest) for more details.
 
