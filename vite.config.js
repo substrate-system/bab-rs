@@ -2,7 +2,7 @@
 import browserslist from 'browserslist';
 import { defineConfig } from 'vite';
 import { browserslistToTargets } from 'lightningcss';
-
+import preact from '@preact/preset-vite'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -10,7 +10,12 @@ export default defineConfig({
         global: 'globalThis'
     },
     root: 'example',
-    plugins: [],
+    plugins: [
+        preact({
+            devtoolsInProd: false,
+            prefreshEnabled: true
+        })
+    ],
     // https://github.com/vitejs/vite/issues/8644#issuecomment-1159308803
     esbuild: {
         logOverride: { 'this-is-undefined-in-esm': 'silent' }

@@ -4,30 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/style.css">
-    <title>Bab Hash - WASM Example</title>
+    <title>Bab + WASM Example</title>
 </head>
 <body>
-    <h1>Bab WILLIAM3 Hash Function (WASM)</h1>
-
-    <div class="method">
-        <h2>Batch Hashing</h2>
-        <input
-            type="text"
-            id="input"
-            placeholder="Enter text to hash"
-            value="hello world"
-        >
-        <button onclick="hashBatch()">Hash (Batch)</button>
-        <div id="output"></div>
-    </div>
-
-    <div class="method">
-        <h2>Incremental Hashing</h2>
-        <input type="text" id="input1" placeholder="First part" value="hello ">
-        <input type="text" id="input2" placeholder="Second part" value="world">
-        <button onclick="hashIncremental()">Hash (Incremental)</button>
-        <div id="output2"></div>
-    </div>
+    <div id="root"></div>
     <script type="module" src="./index.ts"></script>
   </body>
 </html>
